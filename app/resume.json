@@ -1,0 +1,184 @@
+{
+    "name": "CHRISTOPHER THOMAS",
+    "title": "Engineering Leader, Executive, Senior Manager/Director",
+    "summary": {
+      "location": "Christiansburg, VA 24073",
+      "phone": "(540) 808-2782",
+      "email": "chris.thomas@cleaner.codes",
+      "linkedin": "linkedin.com/in/killfile",
+      "description": "Twenty years in the software development industry with ten focused in engineering management of teams up to 20. Proven track record of delivering complex projects on time and under budget in Agile environments. Extensive experience hiring, retaining, mentoring, and upskilling software engineers and building great engineering cultures."
+    },
+    "experience": [
+      {
+        "company": "0x",
+        "location": "San Francisco, CA",
+        "position": "Sr Engineering Manager",
+        "dates": "07/2024 - 11/2024",
+        "responsibilities": [
+          "Launched the 0x API v2 and implemented support processes around it to ensure a successful public rollout.",
+          "Reformed hiring process to eliminate bottlenecks and reduce time-to-hire; coached managers and VPs on hiring.",
+          "Coached product leaders through roadmap exercises and instituted a prioritization framework resulting in a 100% delivery rate of high priority items on or ahead of schedule.",
+          "Introduced a security response process and SLA for vulnerable dependencies which reduced API wide attack surface by >90% for critical and high priority issues without delaying deliverables."
+        ]
+      },
+      {
+        "company": "Tracer",
+        "location": "Manhattan, NY",
+        "position": "Sr Engineering Manager",
+        "dates": "04/2021 - 04/2024",
+        "responsibilities": [
+          "Launched V2 of Tracer’s bulk data processing engine reducing compute costs by 20%.",
+          "Replaced a legacy front-end application with an all-Typescript/React UI with zero downtime or feature loss.",
+          "Lead a team of 15 in cross-functional technical projects resulting in performance improvements of ~15%.",
+          "Coached other managers driving company-wide implementation of engineering best practices reducing defect rate to less than 2%.",
+          "Recruited and retained a global engineering organization focused on Python and React development."
+        ]
+      },
+      {
+        "company": "Voice",
+        "location": "Bronx, NY",
+        "position": "Software Development Manager",
+        "dates": "07/2020 - 03/2021",
+        "responsibilities": [
+          "Managed two teams in the US and South America which delivered security and compliance solutions for token monetization.",
+          "Reorganized teams to decouple SmartContract development from feature development allowing geographic distribution of the SmartContract team to reduce costs and boost retention to 100%.",
+          "Planned, prioritized, and implemented CI/CD process, tripling release frequency."
+        ]
+      },
+      {
+        "company": "Block.one",
+        "location": "Blacksburg, VA",
+        "position": "Engineering Manager",
+        "dates": "09/2019 - 07/2020",
+        "responsibilities": [
+          "Launched v1 of “Voice” on time, under budget, and with zero release-blocking defects.",
+          "Restructured organization-wide approach to versioning, reducing merge-conflicts and cutting time-to-merge by 20%.",
+          "Transformed an under-performing C# and C++ team into one that hit sprint commitments 100% of the time while maintaining velocity."
+        ]
+      },
+      {
+        "company": "FoxGuard Solutions",
+        "location": "Christiansburg, VA",
+        "position": "Software Development Manager",
+        "dates": "10/2014 - 08/2019",
+        "responsibilities": [
+          "Launched the PUMP project in collaboration with the US Department of Energy on time and under budget.",
+          "Designed and delivered a groundbreaking cryptographic isolation technique which made product/market fit possible and allowed profitable operation of the project at-scale across multiple clients.",
+          "Introduced and up-skilled the backend development team on GitOps & DevOps with Terraform, improving scaling time by 3 orders of magnitude.",
+          "Implemented CI/CD with robust acceptance testing in our enterprise SOA system, deploying backend (C#) and frontend (TypeScript/Angular) in as little as 20 minutes.",
+          "Cultivated a close-knit, collaborative team culture which resulted in a 0% loss rate of engineering employees to regional competitors."
+        ]
+      },
+      {
+        "company": "VirPack",
+        "location": "Blacksburg, VA",
+        "position": "Sr C# Developer & Software Manager",
+        "dates": "12/2009 - 10/2014",
+        "responsibilities": [
+          "Launched a C# and Angular, white-label, fintech application which handles hundreds of millions of dollars in loan documents.",
+          "Recruited and trained a small development team focused on Javascript, Angular, and C#.",
+          "Introduced test driven development, Agile, and SOLID principles to the company; set company records for reliability and release frequency."
+        ]
+      }
+    ],
+    "individual_contributor_experience": [
+      {
+        "company": "Coral",
+        "location": "Reston, VA",
+        "position": "Lead Java Developer",
+        "dates": "03/2009 - 11/2009",
+        "responsibilities": [
+          "Built and demonstrated prototype cloud orchestration technology to investors.",
+          "Set and implemented unit-testing standards for development team using JMock and JUnit."
+        ]
+      },
+      {
+        "company": "SiteVision",
+        "location": "Roanoke, VA",
+        "position": "Senior Web Developer",
+        "dates": "04/2008 - 03/2009",
+        "responsibilities": [
+          "Extensive use of Javascript/AJAX, JSON, and XML based messaging for asynchronous communications.",
+          "HIPAA compliant database design and PII segregation for healthcare clients."
+        ]
+      },
+      {
+        "company": "BearingPoint",
+        "location": "Radford, VA",
+        "position": "Technology Consultant",
+        "dates": "10/2007 - 04/2008",
+        "responsibilities": [
+          "Tested and refactored/rearchitected MS-SQL database application to improve performance by ~400%.",
+          "Held US government “secret” security clearance."
+        ]
+      },
+      {
+        "company": "Fingertip Marketing",
+        "location": "Blacksburg, VA",
+        "position": "Sr Web Developer",
+        "dates": "12/2004 - 10/2007",
+        "responsibilities": [
+          "Highly test-oriented LAMP stack development with substantial database architecture responsibilities.",
+          "Implemented a prototype asynchronous Javascript based framework (later replaced with AJAX)."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "degree": "BS",
+        "field": "Computer Science",
+        "institution": "Radford University",
+        "location": "Radford, VA",
+        "dates": "2003-2005"
+      },
+      {
+        "degree": "BA",
+        "field": "History",
+        "institution": "University of Virginia",
+        "location": "Charlottesville, VA",
+        "dates": "1997-2002"
+      }
+    ],
+    "training": [
+      {
+        "course": "Management Training",
+        "provider": "LifeLabs Learning",
+        "location": "New York, NY",
+        "year": 2023
+      },
+      {
+        "course": "Amp Up Your Leadership",
+        "provider": "Voltage Consulting",
+        "location": "Roanoke, VA",
+        "year": 2017
+      }
+    ],
+    "side_projects": [
+      {
+        "project": "LinkedOut",
+        "description": "LinkedIn quality of life browser plugin for Chrome/Firefox",
+        "year": 2024
+      },
+      {
+        "project": "MarkApplied",
+        "description": "AI powered job tracker and resume builder (used to generate this resume)",
+        "year": 2024
+      },
+      {
+        "project": "Enigma Code Kata",
+        "description": "TDD teaching tool using WW2 German Enigma codes",
+        "year": 2021
+      },
+      {
+        "project": "Coke and Strippers Cybersecurity",
+        "description": "Hardware hacking proof-of-concepts",
+        "year": 2019
+      },
+      {
+        "project": "Newsvine Citizen Journalism",
+        "description": "Award winning current events and politics content syndicated by MSNBC",
+        "years": "2006 - 2013"
+      }
+    ]
+  }
+  

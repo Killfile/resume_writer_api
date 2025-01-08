@@ -1,0 +1,9 @@
+name: base
+channels:
+- defaults
+- conda-forge
+dependencies:
+- python=3.12
+- flask
+- gunicorn
+- WeasyPrint
