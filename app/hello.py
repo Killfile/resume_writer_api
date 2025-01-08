@@ -33,15 +33,54 @@ def generate_resume():
         return_value =  f"A resume containing the keyword: {keyword}"
         return json.dumps({"Resume": return_value}) 
 
+def _read_template(filename:str):
+    with open(os.path.join(current_app.root_path, "template", filename)) as f:
+        contents = f.read()
+    return contents
+
 @app.route('/html_resume')
 def render_html_resume():
+
+    def render_job_experience(experience, job_html_template, job_responsibility_html_template):
+        job_experience = str(job_html_template)
+        print(f"Experience: {experience}", flush=True)
+        job_experience = job_experience.replace("<<CompanyPlaceholder>>", experience["company"])
+        job_experience = job_experience.replace("<<LocationPlaceholder>>", experience["location"])
+        job_experience = job_experience.replace("<<TitlePlaceholder>>", experience["position"])
+        job_experience = job_experience.replace("<<DatesPlaceholder>>", experience["dates"])
+
+        job_responsibilities_html = ""
+        for responsibility in experience["responsibilities"]:
+            job_responsibility_html = str(job_responsibility_html_template)
+            job_responsibility_html = job_responsibility_html.replace("<<ResponsibilityPlaceholder>>", responsibility)
+            job_responsibilities_html += job_responsibility_html
+
+        job_experience = job_experience.replace("<<ResponsibilitiesPlaceholder>>", job_responsibilities_html)
+        return job_experience
+
     file_directory = os.path.join(current_app.root_path, "files")
     output_filename = "test.pdf"
-    with open(os.path.join(current_app.root_path, "resume.json")) as j:
-        resume = json.load(j.read())
-    with open(os.path.join(current_app.root_path, "template", "resume.html")) as f:              
-         html = f.read()
-    return html
+    with open(os.path.join(current_app.root_path, "resume.json"), 'r') as j:
+        json_str = j.read()
+    resume_json = json.loads(json_str)
+    resume_html = _read_template("resume.html")
+    job_html_template = _read_template("job.html")
+    job_responsibility_html_template = _read_template("job_responsibility.html")
+
+    experience_html = ""
+    print("Testing...", flush=True)
+    for experience in resume_json["experience"]:
+        job_experience = render_job_experience(experience, job_html_template, job_responsibility_html_template)
+        experience_html += job_experience
+    
+    ic_experience_html = ""
+    for experience in resume_json["individual_contributor_experience"]:
+        job_experience = render_job_experience(experience, job_html_template, job_responsibility_html_template)
+        ic_experience_html += job_experience
+        
+    resume_html = resume_html.replace("<<ExperiencePlaceholder>>",experience_html)
+    resume_html = resume_html.replace("<<ICExperiencePlaceholder>>", ic_experience_html)
+    return resume_html
 
 #@app.route('/pdf_resume')
 #def render_pdf_resume():
