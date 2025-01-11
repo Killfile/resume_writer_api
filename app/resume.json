@@ -157,22 +157,22 @@
       {
         "project": "LinkedOut",
         "description": "LinkedIn quality of life browser plugin for Chrome/Firefox",
-        "year": 2024
+        "years": 2024
       },
       {
         "project": "MarkApplied",
         "description": "AI powered job tracker and resume builder (used to generate this resume)",
-        "year": 2024
+        "years": 2024
       },
       {
         "project": "Enigma Code Kata",
         "description": "TDD teaching tool using WW2 German Enigma codes",
-        "year": 2021
+        "years": 2021
       },
       {
         "project": "Coke and Strippers Cybersecurity",
         "description": "Hardware hacking proof-of-concepts",
-        "year": 2019
+        "years": 2019
       },
       {
         "project": "Newsvine Citizen Journalism",
