@@ -1,9 +1,9 @@
 {
-    "my experience": 
+    "highlighted experience": 
         [
         {
-            "company": "cingo",
-            "relevant skills":[
+            "company": "Fingertip Marketing",
+            "keywords":[
                 "AJAX",
                 "Apache",
                 "Application Development",
@@ -121,8 +121,8 @@
             ]
         },
         {
-            "company":"bearingpoint",
-            "relevant skills":
+            "company":"BearingPoint",
+            "keywords":
             [
                 "Application Development",
                 "B2B",
@@ -239,8 +239,8 @@
             ]
         },
         {
-            "company":"sitevision",
-            "relevant skills":
+            "company":"SiteVision",
+            "keywords":
             [
                 "AJAX",
                 "Apache",
@@ -374,8 +374,8 @@
             ]
         },
         {
-            "company":"coral",
-            "relevant skills":
+            "company":"Coral",
+            "keywords":
             [
                 "Apache",
                 "Application Development",
@@ -448,8 +448,8 @@
             ]
         },
         {
-            "company":"virpack",
-            "relevant skills":
+            "company":"VirPack",
+            "keywords":
             [
                 "Enterprise Systems Design",
                 "Ethics",
@@ -660,8 +660,8 @@
             ]
         },
         {
-            "company":"foxguard",
-            "relevant skills":[
+            "company":"FoxGuard Solutions",
+            "keywords":[
                 ".Net",
                 ".NET Core",
                 ".NET Framework",
@@ -1559,7 +1559,7 @@
         },
         {
             "company":"Block.one",
-            "relevant skills":
+            "keywords":
             [
 
                 ".Net",
@@ -2107,8 +2107,8 @@
             ]
         },
         {
-            "company":"voice",
-            "relevant skills":
+            "company":"Voice",
+            "keywords":
             [
                 ".Net",
                 ".NET Core",
@@ -2863,8 +2863,8 @@
             ]
         },
         {
-            "company":"tracer",
-            "relevant skills":
+            "company":"Tracer",
+            "keywords":
             [
                 "3rd Party Integrations",
                 "A/B testing",
@@ -3918,7 +3918,7 @@
         },
         {
             "company":"0x",
-            "relevant skills":
+            "keywords":
             [
                 "24-hour Monitoring",
                 "3rd Party Integrations",

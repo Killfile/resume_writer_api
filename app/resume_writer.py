@@ -1,14 +1,13 @@
-import openai
-
+import json
 from app.app_paths import AppPaths
 
 class ResumeWriter:
-    def __init__(self, pathfinder: AppPaths, openai_client: openai.OpenAI):
-        self._client = openai_client
+    def __init__(self, pathfinder: AppPaths, responsibilites: list):
         self._pathfinder = pathfinder
+        self._responsibilities = responsibilites
 
     def _read_template(self, filename:str):
-        with open(self._pathfinder.get_local_path("template", filename)) as f:
+        with open(self._pathfinder.get_local_path("resume_templates", filename)) as f:
             contents = f.read()
         return contents
     
@@ -60,14 +59,15 @@ class ResumeWriter:
 
     def _render_job_experience(self, experience, job_html_template, job_responsibility_html_template):
         job_experience = str(job_html_template)
-        print(f"Experience: {experience}", flush=True)
         job_experience = job_experience.replace("<<CompanyPlaceholder>>", experience["company"])
         job_experience = job_experience.replace("<<LocationPlaceholder>>", experience["location"])
         job_experience = job_experience.replace("<<TitlePlaceholder>>", experience["position"])
         job_experience = job_experience.replace("<<DatesPlaceholder>>", experience["dates"])
 
+        revised_experience = list(filter(lambda x: x["company"] == experience["company"], self._responsibilities)).pop()
+        print(f"*****\n\n{revised_experience}\n\n*******",flush=True)
         job_responsibilities_html = ""
-        for responsibility in experience["responsibilities"]:
+        for responsibility in revised_experience["responsibilities"]:
             job_responsibility_html = str(job_responsibility_html_template)
             job_responsibility_html = job_responsibility_html.replace("<<ResponsibilityPlaceholder>>", responsibility)
             job_responsibilities_html += job_responsibility_html

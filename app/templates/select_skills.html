@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+    <head>
+    <title>Select Skills To Add</title>
+    </head>
+    <body>  
+        <h1>Select Skills</h1>
+        <form action="{{url_for('do_map_skills')}}" method="post">
+        {%for skill in unmatched_skills%}
+            <h3>{{ skill }}</h3>
+            {%for company in companies%}
+            <span>
+                <label for="{{skill+company}}">{{company}}</label>
+                <input type="checkbox" value="{{skill}}" class="danger" name='{{company}}' id="{{skill+company}}">
+            </span>
+            {%endfor%}
+        {%endfor%}
+        <div>
+            <input name="skills" type="text" value="{{skills}}"/>
+        </div>
+        <div>
+            <button type="submit">Submit...</button>
+          </div>
+    </form>
+    </body>
