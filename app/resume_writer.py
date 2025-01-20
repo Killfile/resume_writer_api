@@ -4,7 +4,7 @@ from app.app_paths import AppPaths
 class ResumeWriter:
     def __init__(self, pathfinder: AppPaths, responsibilites: list):
         self._pathfinder = pathfinder
-        self._responsibilities = responsibilites
+        self._revised_experience = responsibilites
 
     def _read_template(self, filename:str):
         with open(self._pathfinder.get_local_path("resume_templates", filename)) as f:
@@ -64,8 +64,12 @@ class ResumeWriter:
         job_experience = job_experience.replace("<<TitlePlaceholder>>", experience["position"])
         job_experience = job_experience.replace("<<DatesPlaceholder>>", experience["dates"])
 
-        revised_experience = list(filter(lambda x: x["company"] == experience["company"], self._responsibilities)).pop()
-        print(f"*****\n\n{revised_experience}\n\n*******",flush=True)
+        if(self._revised_experience is not None):
+            revised_experience = list(filter(lambda x: x["company"] == experience["company"], self._revised_experience)).pop()
+            print(f"*****\n\n{revised_experience}\n\n*******",flush=True)
+        else:
+            revised_experience = experience
+
         job_responsibilities_html = ""
         for responsibility in revised_experience["responsibilities"]:
             job_responsibility_html = str(job_responsibility_html_template)

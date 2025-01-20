@@ -4,6 +4,7 @@ from flask import Flask, request, current_app, send_from_directory, render_templ
 import json
 from openai import OpenAI
 from pprintpp import pformat as pp
+import shutil
 
 
 from app.app_paths import AppPaths
@@ -36,7 +37,7 @@ def api_descrpition():
 	return description
 
 @app.route('/initialize_ai')
-def create_resume():
+def initialize_application():
     output = ""
     
     paths = AppPaths(current_app.root_path)
@@ -205,7 +206,93 @@ def find_element_in_list_matching_criteria(to_search:list, criteria:callable):
         if criteria(item) == True:
             return item
     return None
+
+@app.route('/create_new_resume')
+def do_create_new_resume():
+
+    resume_number = 1
+    paths = AppPaths(current_app.root_path)
+
+    while os.path.exists(paths.get_local_path("files",f"resume_{resume_number}.json")) == True:
+        resume_number += 1
     
+    source = paths.get_local_path("resume.json")
+    dest = paths.get_local_path("files",f"resume_{resume_number}.json")
+    shutil.copyfile(source,dest)
+
+    skills = get_array_from_arguments(request,"skills")
+
+    overlap, unmatched_skills = get_skills_overlap(skills)
+
+    with(open(source,'r') as f):
+        resume_str = f.read()
+    resume_json = json.loads(resume_str)
+    for company in resume_json["experience"]:
+        company_element = find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
+        company["skills"] = company_element["keywords"]
+
+    for company in resume_json["individual_contributor_experience"]:
+        company_element = find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
+        company["skills"] = company_element["keywords"]
+
+    with(open(dest,'w') as f):
+        f.write(json.dumps(resume_json))
+
+
+    return redirect(url_for("render_build_resume", resume_id = resume_number))
+
+
+
+@app.route('/build_resume/<resume_id>', methods=['GET'])
+def render_build_resume(resume_id):
+    paths = AppPaths(current_app.root_path)
+    with(open(paths.get_local_path("files", f"resume_{resume_id}.json"),'r') as r):
+        resume_str = r.read()
+
+    resume_json = json.loads(resume_str)
+    output = json.dumps(resume_json, indent=4)
+    return render_template("build_resume.html", resume_id=resume_id, resume=resume_json)
+
+@app.route('/rephrase_company/<id>/<name>', methods=['GET'])
+def do_rephrase_single_company(id, name):
+    paths = AppPaths(current_app.root_path)
+    with(open(paths.get_local_path("resume.json"),'r') as f):
+        json_str = f.read()
+    original_resume_json = json.loads(json_str)
+    original_experience_record = find_element_in_list_matching_criteria(original_resume_json["experience"], lambda x:x["company"].lower()==name.lower())
+    if original_experience_record is None:
+        original_experience_record = find_element_in_list_matching_criteria(original_resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
+
+    with(open(paths.get_local_path("files",f"resume_{id}.json"), 'r') as f):
+        json_str = f.read()
+    resume_json = json.loads(json_str)
+    experience_record = find_element_in_list_matching_criteria(resume_json["experience"], lambda x:x["company"].lower()==name.lower())
+    if experience_record is None:
+        experience_record = find_element_in_list_matching_criteria(resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
+
+    
+
+    message = f"""
+        I am going to provide you with some resume line items. Rephrase them to appeal to a reader seeking experience in the following areas:\n\n
+
+        {json.dumps(experience_record["skills"])}
+
+        Here are the resume line items: \n\n
+
+        {json.dumps(original_experience_record["responsibilities"])}
+
+        \n\nRephrasing should not change the number of responsibilities listed. You should return a 
+        json array named "responsibilities" containing the rephrased results. 
+    """
+
+    reply_json = _get_json_from_openai(message)
+
+    experience_record["responsibilities"] = reply_json["responsibilities"]
+    with(open(paths.get_local_path("files",f"resume_{id}.json"), 'w') as f):
+        f.write(json.dumps(resume_json))
+    
+    return redirect(url_for("render_build_resume", resume_id = id))
+
 @app.route('/map_skills', methods=['POST'])
 def do_map_skills():
     paths = AppPaths(current_app.root_path)
@@ -236,7 +323,69 @@ def render_select_skills():
     skills_json = json.loads(json_str)
     companies = [item["company"] for item in skills_json["highlighted experience"]]
     return render_template('select_skills.html',unmatched_skills=unmatched_skills,companies=companies, skills=json.dumps(skills))
+
+def _get_json_from_openai(ai_query):
+    output = ""
+    paths = AppPaths(current_app.root_path)
+    with open(paths.get_local_path("chatgpt.token"), 'r') as f:
+        api_key = f.read()
+
+    client = OpenAI(api_key=api_key)
+    assistant = client.beta.assistants.retrieve("asst_3Y6QVpOimmPe4952EOXijewl")
+    thread = client.beta.threads.create()
     
+    message_content = ai_query
+    
+    print(f"Message for OpenAI: {message_content}", flush=True)
+
+    message = client.beta.threads.messages.create(
+        thread_id=thread.id,
+        role="user",
+        content=message_content)
+
+    run = client.beta.threads.runs.create_and_poll(
+        thread_id=thread.id,
+        assistant_id=assistant.id,
+        instructions="Rephrase each resume responsibility for the requested company using the provided keywords. The number of responsibilities returned should match the number listed in resume document. Keywords should not be formatted differently than other text."
+    )
+
+    reply_json = None
+    if run.status == 'completed': 
+        messages = client.beta.threads.messages.list(
+            thread_id=thread.id
+        )
+        for index, message in enumerate(messages.data):
+            message_value = message.content[0].text.value
+            print(f"Reply from OpenAI: {message}",flush=True)
+
+            if message.role == "assistant" and "```json" in message_value:
+                try:
+                    reply_json = json.loads(extract_json_from_message(message_value))
+                    print(f"*****************JSON extracted from reply: {json.dumps(reply_json)}", flush=True)
+                except Exception as e:
+                    print(f"Error extracting JSON from reply: {e}",flush=True)
+    else:
+        print(f"Run Status is: {run.status}",flush=True)
+
+    return reply_json
+
+@app.route('/resume/<id>', methods=['GET'])
+def render_json_resume_as_pdf(id):
+    paths = AppPaths(current_app.root_path)
+    file_directory_name = "files"
+
+    with(open(paths.get_local_path(file_directory_name, f"resume_{id}.json"),'r') as r):
+        resume_str = r.read()
+
+    resume_json = json.loads(resume_str)
+    writer = ResumeWriter(paths,None)
+    resume_html =  writer.write_resume(resume_json)
+    output_filename = "Chris Thomas Resume.pdf"
+    output_path = paths.get_local_path(file_directory_name,output_filename)
+    file_directory = paths.get_local_path(file_directory_name)
+    HTML(string=resume_html).write_pdf(output_path)
+    return send_from_directory(file_directory, output_filename, as_attachment=True)
+
 
 @app.route('/resume', methods=['GET', 'POST'])
 def render_html_resume():

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+    <head>
+    <title>Build Resume</title>
+    </head>
+    <body>  
+        <h1>Build Resume</h1>
+        <div>
+            <a href="{{url_for('render_json_resume_as_pdf',id=resume_id)}}">[Download PDF]</a>
+        </div>
+        <h2>Header</h2>
+        <p>Name: {{resume["name"]}}</p>
+        <p>Title: {{resume["title"]}}</p>
+        <h2>Summary</h2>
+        <p>Location: {{resume["summary"]["location"]}}</p>
+        <p>Phone: {{resume["summary"]["phone"]}}</p>
+        <p>Email: {{resume["summary"]["email"]}}</p>
+        <p>Linkedin: {{resume["summary"]["linkedin"]}}</p>
+        <p>Description: {{resume["summary"]["description"]}}</p>
+            <h1>Experience</h1>
+            <h2>Primary Experience</h2>
+            {%for experience in resume["experience"]%}
+                <h3>{{experience["company"]}}</h3>
+                <p>Location: {{experience["location"]}}</p>
+                <p>Position: {{experience["position"]}}</p>
+                <p>Dates: {{experience["dates"]}}</p>
+                <h4>Responsibilities</h4>
+                <a href="{{url_for('do_rephrase_single_company',id=resume_id, name=experience['company'])}}">Rephrase</a>
+                <ul>
+                    {%for responsibility in experience["responsibilities"]%}
+                        <li>{{responsibility}}</li>
+                    {%endfor%}
+                </ul>
+                <h5>Skills</h5>
+                <p>{{experience["skills"]}}</p>
+            {%endfor%}
+
+            <h2>Secondary Experience</h2>
+            {%for experience in resume["individual_contributor_experience"]%}
+                <h3>{{experience["company"]}}</h3>
+                <p>Location: {{experience["location"]}}</p>
+                <p>Position: {{experience["position"]}}</p>
+                <p>Dates: {{experience["dates"]}}</p>
+                <h4>Responsibilities</h4>
+                <a href="{{url_for('do_rephrase_single_company',id=resume_id, name=experience['company'])}}">Rephrase</a>
+                <ul>
+                    {%for responsibility in experience["responsibilities"]%}
+                        <li>{{responsibility}}</li>
+                    {%endfor%}
+                </ul>
+            {%endfor%}
+        <h1>Education</h1>
+        {%for learning in resume["education"]%}
+        <div>
+            <h4>{{learning["institution"]}}</h4>
+            {{learning["degree"]}} {{learning["field"]}} -- {{learning["dates"]}}</div>
+        <div>
+        {%endfor%}
+
+        <h2>Training</h2>
+        {%for learning in resume["training"]%}
+        <div>
+            <h4>{{learning["course"]}}</h4>
+            {{learning["provider"]}} -- {{learning["dates"]}}</div>
+        <div>
+        {%endfor%}
+
+        <h3>Projects</h3>
+        {%for project in resume["side_projects"]%}
+        <div>
+            <p><strong>{{project["project"]}}</strong> -- {{project["years"]}}</p>
+            <p>{{project["description"]}}</p>
+        </div>
+        {%endfor%}
+    </body>
