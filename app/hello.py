@@ -5,6 +5,7 @@ import json
 from openai import OpenAI
 from pprintpp import pformat as pp
 import shutil
+from pydantic import BaseModel
 
 
 from app.app_paths import AppPaths
@@ -285,7 +286,7 @@ def do_rephrase_single_company(id, name):
         json array named "responsibilities" containing the rephrased results. 
     """
 
-    reply_json = _get_json_from_openai(message)
+    reply_json = _get_json_from_openai_completion(message)
 
     experience_record["responsibilities"] = reply_json["responsibilities"]
     with(open(paths.get_local_path("files",f"resume_{id}.json"), 'w') as f):
@@ -324,7 +325,29 @@ def render_select_skills():
     companies = [item["company"] for item in skills_json["highlighted experience"]]
     return render_template('select_skills.html',unmatched_skills=unmatched_skills,companies=companies, skills=json.dumps(skills))
 
-def _get_json_from_openai(ai_query):
+
+def _get_json_from_openai_completion(ai_query):
+    class JobResponsibilities(BaseModel):
+        responsibilities: list[str]
+
+    paths = AppPaths(current_app.root_path)
+    with open(paths.get_local_path("chatgpt.token"), 'r') as f:
+        api_key = f.read()
+    
+    client = OpenAI(api_key=api_key)
+    completion = client.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        response_format = JobResponsibilities,
+        messages=[
+            {"role": "developer", "content": "You are a resume writer and software career coach who knows how to fine-tune resumes to help land interviews."},
+            {"role": "user", "content": ai_query}
+        ]
+    )
+
+    print(completion.choices[0].message,flush=True)
+    return json.loads(completion.choices[0].message.content)
+
+def _get_json_from_openai_assistant(ai_query):
     output = ""
     paths = AppPaths(current_app.root_path)
     with open(paths.get_local_path("chatgpt.token"), 'r') as f:
