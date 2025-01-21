@@ -399,61 +399,7 @@ def render_html_resume():
     resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
    
     output = ""
-    job_requested_keywords = _get_array_from_arguments(request,"skills")
-    if(job_requested_keywords == ""):
-        job_requested_keywords = [
-            "engineering strategy",
-            "sprint operations",
-            "quarterly roadmap",
-            "engineering organization",
-            "team ownership",
-            "team accountability",
-            "develop talent",
-            "engineering brand",
-            "cloud-native infrastructure",
-            "automation",
-            "infrastructure-as-code",
-            "Agile operations",
-            "high-quality software",
-            "product goals",
-            "cross-functional teams",
-            "data dashboards",
-            "operational analytics",
-            "regulated environment",
-            "vendor partnerships",
-            "technical needs",
-            "engineering objectives",
-            "senior leadership",
-            "engineering organization management",
-            "diverse teams",
-            "inclusive environments",
-            "cloud-native expertise",
-            "Agile processes",
-            "structured engineering operations",
-            "data tools",
-            "SQL",
-            "strategic planning",
-            "HIPAA compliance",
-            "collaborative culture",
-            "integrating technologies",
-            "healthcare data",
-            "life sciences data",
-            "FHIR",
-            "HL7",
-            "Data Science team",
-            "regulated operations",
-            "high-growth startup",
-            "Cloud-native environments",
-            "Infrastructure as code",
-            "Automation",
-            "Agile processes",
-            "Data tools (SQL)",
-            "Generative AI",
-            "Engineering operations",
-            "Healthcare data experience",
-            "Vendor management",
-            "Regulated environments experience"
-        ]
+    job_requested_keywords = get_array_from_arguments(request,"skills")
     
     print(f"Requested: {job_requested_keywords}", flush=True)
     intersection, unmatched_skills = _get_skills_overlap(job_requested_keywords)
