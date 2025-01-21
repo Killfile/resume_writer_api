@@ -50,14 +50,14 @@ def initialize_application():
 
     
 
-    file_object = upload_file_to_openai(paths, client, "resume.json")
+    file_object = _upload_file_to_openai(paths, client, "resume.json")
     output += "\n" + pp(file_object)
 
-    vector_store = create_vector_store_from_file(client, file_object)
+    vector_store = _create_vector_store_from_file(client, file_object)
     output += "\n" + pp(vector_store)
 
 
-    assistant = create_assistant(client, vector_store)
+    assistant = _create_assistant(client, vector_store)
     output += "\n" + pp(assistant)
 
     return_value =  f'''
@@ -72,7 +72,7 @@ def initialize_application():
                     '''
     return return_value
 
-def create_vector_store_from_file(client, file_object):
+def _create_vector_store_from_file(client, file_object):
     vector_store = client.beta.vector_stores.create(
         file_ids=[file_object.id],
         name="Resume",
@@ -80,7 +80,7 @@ def create_vector_store_from_file(client, file_object):
     
     return vector_store
 
-def upload_file_to_openai(paths, client, filename:str):
+def _upload_file_to_openai(paths, client, filename:str):
     local_path = paths.get_local_path(filename)
     size = os.path.getsize(local_path)
     print(f"{local_path} is {size}", flush=True)
@@ -93,34 +93,12 @@ def upload_file_to_openai(paths, client, filename:str):
 
     return file_object
 
-def create_assistant(client, vector_store)->any:
-    schema =    {
-                "name": "get_responsibiliets",
-                "description": "Rephrases job responsibilites using keywords",
-                "strict": True,
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "company": {
-                            "type": "string",
-                            "description": "The name of the employer"
-                        },
-                        "responsibility": {
-                            "type": "string",
-                            "description": "The rephrased job responsibility",
-                        }
-                    },
-                    "additionalProperties": False,
-                    "required": ["company", "responsibility"]
-                }
-                }
-
+def _create_assistant(client, vector_store)->any:
     my_assistant = client.beta.assistants.create(
         instructions="You are a career coach and resume writer; you rewrite candidate resumes to make them more attractive to prospective employers and highlight their skills.",
         name="Career Coach",
         tools=[{"type": "file_search"}],
         model="gpt-4o-mini",
-        #response_format={"type":"json_schema", "json_schema":schema},
         response_format={"type": "text"},
         tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
         
@@ -129,9 +107,9 @@ def create_assistant(client, vector_store)->any:
 
 @app.route('/compute_intersection', methods=['GET', 'POST'])
 def compute_intersection():
-    skills = get_array_from_arguments(request,"skills")
+    skills = _get_array_from_arguments(request,"skills")
 
-    overlap, unmatched_skills = get_skills_overlap(skills)
+    overlap, unmatched_skills = _get_skills_overlap(skills)
 
     return render_template("skills_overlap.html", 
                            supplied_skills=pp(skills), 
@@ -139,7 +117,7 @@ def compute_intersection():
                            overlapping_skills = json.dumps(overlap, indent=4),
                            skills=skills)
 
-def get_skills_overlap(array_data)->Tuple[any, list]:
+def _get_skills_overlap(array_data)->Tuple[any, list]:
     lcase_array = [element.lower() for element in array_data if isinstance(element, str)]
     paths = AppPaths(current_app.root_path)
     
@@ -157,27 +135,27 @@ def get_skills_overlap(array_data)->Tuple[any, list]:
     unmatched_skills = list(set(lcase_array).difference(all_overlapping_skills))    
     return matched_skills,unmatched_skills
    
-def trim_before_substring(main_string:str, substring:str)->str:
+def _trim_before_substring(main_string:str, substring:str)->str:
     index = main_string.find(substring)
     if index != -1:
         return main_string[index:]
     return main_string
 
-def trim_after_last_substring(main_string:str, substring)->str:
+def _trim_after_last_substring(main_string:str, substring)->str:
     index = main_string.rfind(substring)
     if index != -1:
         return main_string[:index + len(substring)]
     return main_string
 
-def extract_json_from_message(message):
+def _extract_json_from_message(message):
     json_end_marker = "```"
     json_start_marker = json_end_marker + "json"
-    return_value = trim_before_substring(trim_after_last_substring(message,json_end_marker),json_start_marker)
+    return_value = _trim_before_substring(_trim_after_last_substring(message,json_end_marker),json_start_marker)
     return_value = return_value.replace(json_start_marker,"",1)
     return_value = return_value.replace(json_end_marker,"",1)
     return return_value
 
-def get_array_from_arguments(request,key):
+def _get_array_from_arguments(request,key):
     print(f"Rquest method is {request.method}",flush=True)
     return_value = None
     if request.method == 'POST':
@@ -202,38 +180,42 @@ def get_array_from_arguments(request,key):
             return_value = request.args.getlist(key)
     return return_value
 
-def find_element_in_list_matching_criteria(to_search:list, criteria:callable):
+def _find_element_in_list_matching_criteria(to_search:list, criteria:callable):
     for item in to_search:
         if criteria(item) == True:
             return item
     return None
 
-@app.route('/create_new_resume')
-def do_create_new_resume():
-
+def _find_safe_resume_number(paths: AppPaths, filename:str):
     resume_number = 1
-    paths = AppPaths(current_app.root_path)
-
     while os.path.exists(paths.get_local_path("files",f"resume_{resume_number}.json")) == True:
         resume_number += 1
     
-    source = paths.get_local_path("resume.json")
-    dest = paths.get_local_path("files",f"resume_{resume_number}.json")
+    parts = filename.split(".")
+
+    source = paths.get_local_path(filename)
+    dest = paths.get_local_path("files",f"{parts[0]}_{resume_number}.{parts[1]}")
     shutil.copyfile(source,dest)
+    return resume_number, source, dest
 
-    skills = get_array_from_arguments(request,"skills")
+@app.route('/create_new_resume')
+def do_create_new_resume():
+    paths = AppPaths(current_app.root_path)
+    resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
+   
+    skills = _get_array_from_arguments(request,"skills")
 
-    overlap, unmatched_skills = get_skills_overlap(skills)
+    overlap, unmatched_skills = _get_skills_overlap(skills)
 
     with(open(source,'r') as f):
         resume_str = f.read()
     resume_json = json.loads(resume_str)
     for company in resume_json["experience"]:
-        company_element = find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
         company["skills"] = company_element["keywords"]
 
     for company in resume_json["individual_contributor_experience"]:
-        company_element = find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
         company["skills"] = company_element["keywords"]
 
     with(open(dest,'w') as f):
@@ -260,16 +242,16 @@ def do_rephrase_single_company(id, name):
     with(open(paths.get_local_path("resume.json"),'r') as f):
         json_str = f.read()
     original_resume_json = json.loads(json_str)
-    original_experience_record = find_element_in_list_matching_criteria(original_resume_json["experience"], lambda x:x["company"].lower()==name.lower())
+    original_experience_record = _find_element_in_list_matching_criteria(original_resume_json["experience"], lambda x:x["company"].lower()==name.lower())
     if original_experience_record is None:
-        original_experience_record = find_element_in_list_matching_criteria(original_resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
+        original_experience_record = _find_element_in_list_matching_criteria(original_resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
 
     with(open(paths.get_local_path("files",f"resume_{id}.json"), 'r') as f):
         json_str = f.read()
     resume_json = json.loads(json_str)
-    experience_record = find_element_in_list_matching_criteria(resume_json["experience"], lambda x:x["company"].lower()==name.lower())
+    experience_record = _find_element_in_list_matching_criteria(resume_json["experience"], lambda x:x["company"].lower()==name.lower())
     if experience_record is None:
-        experience_record = find_element_in_list_matching_criteria(resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
+        experience_record = _find_element_in_list_matching_criteria(resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
 
     
 
@@ -297,14 +279,14 @@ def do_rephrase_single_company(id, name):
 @app.route('/map_skills', methods=['POST'])
 def do_map_skills():
     paths = AppPaths(current_app.root_path)
-    skills = get_array_from_arguments(request,"skills")
+    skills = _get_array_from_arguments(request,"skills")
     with(open(paths.get_local_path('full_skills.json'), 'r') as f):
         json_str = f.read()
     skills_json = json.loads(json_str)
     companies = [item["company"] for item in skills_json["highlighted experience"]]
     for company in companies:
         company_skill_array_from_form = request.form.getlist(company)
-        company_element = find_element_in_list_matching_criteria(skills_json["highlighted experience"],lambda x: x["company"] == company)
+        company_element = _find_element_in_list_matching_criteria(skills_json["highlighted experience"],lambda x: x["company"] == company)
         company_element["keywords"].extend(company_skill_array_from_form)
         print(f"Company {company} was assigned these skills: {company_skill_array_from_form}",flush=True)
     
@@ -316,9 +298,9 @@ def do_map_skills():
 @app.route('/select_skills', methods=['GET','POST'])
 def render_select_skills():
     paths = AppPaths(current_app.root_path)
-    skills = get_array_from_arguments(request,"skills")
+    skills = _get_array_from_arguments(request,"skills")
 
-    overlap, unmatched_skills = get_skills_overlap(skills)
+    overlap, unmatched_skills = _get_skills_overlap(skills)
     with(open(paths.get_local_path('full_skills.json'), 'r') as f):
         json_str = f.read()
     skills_json = json.loads(json_str)
@@ -383,7 +365,7 @@ def _get_json_from_openai_assistant(ai_query):
 
             if message.role == "assistant" and "```json" in message_value:
                 try:
-                    reply_json = json.loads(extract_json_from_message(message_value))
+                    reply_json = json.loads(_extract_json_from_message(message_value))
                     print(f"*****************JSON extracted from reply: {json.dumps(reply_json)}", flush=True)
                 except Exception as e:
                     print(f"Error extracting JSON from reply: {e}",flush=True)
@@ -413,8 +395,11 @@ def render_json_resume_as_pdf(id):
 @app.route('/resume', methods=['GET', 'POST'])
 def render_html_resume():
     paths = AppPaths(current_app.root_path)
+    paths = AppPaths(current_app.root_path)
+    resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
+   
     output = ""
-    job_requested_keywords = get_array_from_arguments(request,"skills")
+    job_requested_keywords = _get_array_from_arguments(request,"skills")
     if(job_requested_keywords == ""):
         job_requested_keywords = [
             "engineering strategy",
@@ -471,7 +456,7 @@ def render_html_resume():
         ]
     
     print(f"Requested: {job_requested_keywords}", flush=True)
-    intersection, unmatched_skills = get_skills_overlap(job_requested_keywords)
+    intersection, unmatched_skills = _get_skills_overlap(job_requested_keywords)
     print(f"Computed intersection: {pp(intersection)}")
     
     with open(paths.get_local_path("chatgpt.token"), 'r') as f:
@@ -517,26 +502,41 @@ def render_html_resume():
             if "```json" in message_value:
                 output+= "******\n\n"
                 try:
-                    reply_json = json.loads(extract_json_from_message(message_value))
+                    reply_json = json.loads(_extract_json_from_message(message_value))
                     print(f"JSON extracted from reply: {json.dumps(reply_json)}", flush=True)
                 except Exception as e:
                     print(f"Error extracting JSON from reply: {e}",flush=True)
     else:
         print(f"Run Status is: {run.status}",flush=True)
 
-    if reply_json is not None:
-        with open(paths.get_local_path("resume.json"), 'r') as f:
-            resume_json = json.loads(f.read())
-        writer = ResumeWriter(paths, reply_json)
-        resume_html =  writer.write_resume(resume_json)
-        output_filename = "Chris Thomas Resume.pdf"
-        file_directory_name = "files"
-        output_path = paths.get_local_path(file_directory_name,output_filename)
-        file_directory = paths.get_local_path(file_directory_name)
-        HTML(string=resume_html).write_pdf(output_path)
-        return send_from_directory(file_directory, output_filename, as_attachment=True)
+    skills = _get_array_from_arguments(request,"skills")
 
-    return render_template("bare_output.html", output=output)
+    overlap, unmatched_skills = _get_skills_overlap(skills)
+
+    with(open(dest,'r') as f):
+        resume_str = f.read()
+    resume_json = json.loads(resume_str)
+    
+    for company in resume_json["experience"]:
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
+        company["skills"] = company_element["keywords"]
+
+    for company in resume_json["individual_contributor_experience"]:
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
+        company["skills"] = company_element["keywords"]
+
+
+    if reply_json is not None:
+        for experience in resume_json["experience"]:
+            experience["responsibilities"] = _find_element_in_list_matching_criteria(reply_json,lambda x:x["company"] == experience["company"])["responsibilities"]
+        for experience in resume_json["individual_contributor_experience"]:
+            experience["responsibilities"] = _find_element_in_list_matching_criteria(reply_json,lambda x:x["company"] == experience["company"])["responsibilities"]
+        
+        with open(dest,'w') as f:
+            f.write(json.dumps(resume_json))
+    
+    return redirect(url_for("render_build_resume", resume_id = resume_number))
+    
 
     
 if __name__ == "__main__":
