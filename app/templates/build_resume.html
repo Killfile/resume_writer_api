@@ -2,6 +2,9 @@
     <head>
     <title>Build Resume</title>
     </head>
+    <style>
+        span.highlight   {color: red;}
+    </style>
     <body>  
         <h1>Build Resume</h1>
         <div>
@@ -27,7 +30,7 @@
                 <a href="{{url_for('do_rephrase_single_company',id=resume_id, name=experience['company'])}}">Rephrase</a>
                 <ul>
                     {%for responsibility in experience["responsibilities"]%}
-                        <li>{{responsibility}}</li>
+                        <li>{{responsibility|safe}}</li>
                     {%endfor%}
                 </ul>
                 <h5>Skills</h5>
@@ -44,7 +47,7 @@
                 <a href="{{url_for('do_rephrase_single_company',id=resume_id, name=experience['company'])}}">Rephrase</a>
                 <ul>
                     {%for responsibility in experience["responsibilities"]%}
-                        <li>{{responsibility}}</li>
+                        <li>{{responsibility|safe}}</li>
                     {%endfor%}
                 </ul>
             {%endfor%}

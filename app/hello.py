@@ -111,6 +111,10 @@ def compute_intersection():
 
     overlap, unmatched_skills = _get_skills_overlap(skills)
 
+    print(f"Compute intersection found these skills: {skills}",flush=True)
+    print(f"Compute intersection found these overlaps: {overlap}",flush=True)
+    print(f"Compute intersection found these non-overlaps: {unmatched_skills}",flush=True)
+
     return render_template("skills_overlap.html", 
                            supplied_skills=pp(skills), 
                            unmatched_skills=pp(unmatched_skills), 
@@ -205,7 +209,12 @@ def do_create_new_resume():
    
     skills = _get_array_from_arguments(request,"skills")
 
+    print(f"Do Create Resume was passed these skills: {skills}")
+
     overlap, unmatched_skills = _get_skills_overlap(skills)
+
+    print(f"Do Create Resume found this overlap: {overlap}")
+    print(f"Do Create Resume found these unmatched: {unmatched_skills}")
 
     with(open(source,'r') as f):
         resume_str = f.read()
@@ -221,7 +230,7 @@ def do_create_new_resume():
     with(open(dest,'w') as f):
         f.write(json.dumps(resume_json))
 
-
+    print(f"Create Resume wrote this JSON file: {json.dumps(resume_json, indent=4)}")
     return redirect(url_for("render_build_resume", resume_id = resume_number))
 
 
@@ -233,7 +242,14 @@ def render_build_resume(resume_id):
         resume_str = r.read()
 
     resume_json = json.loads(resume_str)
-    output = json.dumps(resume_json, indent=4)
+    print(f"Render Build Resume found this JSON resume: {json.dumps(resume_json, indent=4)}", flush=True)
+    for e, experience in enumerate(resume_json["experience"]):
+        skills = experience["skills"]
+        for skill in experience["skills"]:
+            resume_json["experience"][e]["responsibilities"][:] = [r.replace(skill,f"<span class=\"highlight\">{skill}</span>") for r in resume_json["experience"][e]["responsibilities"]]
+
+    print(f"Render Build Resume found this JSON resume after replacement: {json.dumps(resume_json, indent=4)}", flush=True)
+    
     return render_template("build_resume.html", resume_id=resume_id, resume=resume_json)
 
 @app.route('/rephrase_company/<id>/<name>', methods=['GET'])
