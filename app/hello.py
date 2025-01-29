@@ -272,7 +272,7 @@ def do_rephrase_single_company(id, name):
     
 
     message = f"""
-        I am going to provide you with some resume line items. Rephrase them to appeal to a reader seeking experience in the following areas:\n\n
+        I am going to provide you with some resume line items. Rephrase them to include the following keywords without changing the meaning of sentence.\n\n
 
         {json.dumps(experience_record["skills"])}
 
@@ -415,7 +415,7 @@ def render_html_resume():
     resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
    
     output = ""
-    job_requested_keywords = get_array_from_arguments(request,"skills")
+    job_requested_keywords = _get_array_from_arguments(request,"skills")
     
     print(f"Requested: {job_requested_keywords}", flush=True)
     intersection, unmatched_skills = _get_skills_overlap(job_requested_keywords)
