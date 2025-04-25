@@ -1,18 +1,23 @@
 import os
+import re
 from typing import Tuple
-from flask import Flask, request, current_app, send_from_directory, render_template, redirect, url_for
+from flask import Flask, request, current_app, send_from_directory, render_template, redirect, url_for, jsonify
 import json
 from openai import OpenAI
 from pprintpp import pformat as pp
 import shutil
 from pydantic import BaseModel
-
+from flask_cors import CORS
 
 from app.app_paths import AppPaths
 from app.resume_writer import ResumeWriter
 from weasyprint import HTML, CSS
 
 app = Flask(__name__)
+CORS(app)
+
+FILE_DIRECTORY_NAME = "files"
+
 
 description =   '''
                 <!DOCTYPE html>
@@ -105,8 +110,8 @@ def _create_assistant(client, vector_store)->any:
     )
     return my_assistant
 
-@app.route('/compute_intersection', methods=['GET', 'POST'])
-def compute_intersection():
+@app.route('/compute_intersection/<company>/<title>', methods=['GET', 'POST'])
+def compute_intersection(company:str, title:str):
     skills = _get_array_from_arguments(request,"skills")
 
     overlap, unmatched_skills = _get_skills_overlap(skills)
@@ -119,7 +124,9 @@ def compute_intersection():
                            supplied_skills=pp(skills), 
                            unmatched_skills=pp(unmatched_skills), 
                            overlapping_skills = json.dumps(overlap, indent=4),
-                           skills=skills)
+                           skills=skills,
+                           company=company,
+                           title=title)
 
 def _get_skills_overlap(array_data)->Tuple[any, list]:
     lcase_array = [element.lower() for element in array_data if isinstance(element, str)]
@@ -202,14 +209,14 @@ def _find_safe_resume_number(paths: AppPaths, filename:str):
     shutil.copyfile(source,dest)
     return resume_number, source, dest
 
-@app.route('/create_new_resume')
-def do_create_new_resume():
+@app.route('/create_new_resume/<company>/<title>')
+def do_create_new_resume(company:str,title:str):
     paths = AppPaths(current_app.root_path)
     resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
    
     skills = _get_array_from_arguments(request,"skills")
 
-    print(f"Do Create Resume was passed these skills: {skills}")
+    print(f"Do Create Resume was called for company: {company} and title: {title} and passed these skills: {skills}")
 
     overlap, unmatched_skills = _get_skills_overlap(skills)
 
@@ -219,13 +226,15 @@ def do_create_new_resume():
     with(open(source,'r') as f):
         resume_str = f.read()
     resume_json = json.loads(resume_str)
-    for company in resume_json["experience"]:
-        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
-        company["skills"] = company_element["keywords"]
+    resume_json["company_name"] = company
+    resume_json["title_name"] = title
+    for exp_company in resume_json["experience"]:
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == exp_company["company"].lower())
+        exp_company["skills"] = company_element["keywords"]
 
-    for company in resume_json["individual_contributor_experience"]:
-        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == company["company"].lower())
-        company["skills"] = company_element["keywords"]
+    for exp_company in resume_json["individual_contributor_experience"]:
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == exp_company["company"].lower())
+        exp_company["skills"] = company_element["keywords"]
 
     with(open(dest,'w') as f):
         f.write(json.dumps(resume_json))
@@ -246,7 +255,10 @@ def render_build_resume(resume_id):
     for e, experience in enumerate(resume_json["experience"]):
         skills = experience["skills"]
         for skill in experience["skills"]:
-            resume_json["experience"][e]["responsibilities"][:] = [r.replace(skill,f"<span class=\"highlight\">{skill}</span>") for r in resume_json["experience"][e]["responsibilities"]]
+            pattern = r"("+skill+r")"
+            replacement = r'<span class="highlight">\1</span>'
+            # r.replace(skill,f"<span class=\"highlight\">{skill}</span>")
+            resume_json["experience"][e]["responsibilities"][:] = [re.sub(pattern,replacement,r, flags=re.IGNORECASE) for r in resume_json["experience"][e]["responsibilities"]]
 
     print(f"Render Build Resume found this JSON resume after replacement: {json.dumps(resume_json, indent=4)}", flush=True)
     
@@ -272,7 +284,7 @@ def do_rephrase_single_company(id, name):
     
 
     message = f"""
-        I am going to provide you with some resume line items. Rephrase them to include the following keywords without changing the meaning of sentence.\n\n
+        I am going to provide you with some resume line items. Rephrase them to include the following keywords. Do not add any keyword more than once. Do not add any keyword to more than one line item.\n\n
 
         {json.dumps(experience_record["skills"])}
 
@@ -390,28 +402,49 @@ def _get_json_from_openai_assistant(ai_query):
 
     return reply_json
 
-@app.route('/resume/<id>', methods=['GET'])
+@app.route('/resume/render_as_pdf/<id>', methods=['GET'])
 def render_json_resume_as_pdf(id):
     paths = AppPaths(current_app.root_path)
-    file_directory_name = "files"
+    
 
-    with(open(paths.get_local_path(file_directory_name, f"resume_{id}.json"),'r') as r):
+    with(open(paths.get_local_path(FILE_DIRECTORY_NAME, f"resume_{id}.json"),'r') as r):
         resume_str = r.read()
 
     resume_json = json.loads(resume_str)
+    company = resume_json["company_name"]
+    title = resume_json["title_name"]
     writer = ResumeWriter(paths,None)
     resume_html =  writer.write_resume(resume_json)
-    output_filename = "Chris Thomas Resume.pdf"
-    output_path = paths.get_local_path(file_directory_name,output_filename)
-    file_directory = paths.get_local_path(file_directory_name)
+    output_filename = f"Chris Thomas-{title}-{company}.pdf"
+    output_path = paths.get_local_path(FILE_DIRECTORY_NAME,output_filename)
+    file_directory = paths.get_local_path(FILE_DIRECTORY_NAME)
     HTML(string=resume_html).write_pdf(output_path)
     return send_from_directory(file_directory, output_filename, as_attachment=True)
 
+@app.route('/resume/read/<id>', methods=['GET'])
+def resume_read(id):
+    paths = AppPaths(current_app.root_path)
+    with(open(paths.get_local_path(FILE_DIRECTORY_NAME, f"resume_{id}.json"),'r') as r):
+        resume_str = r.read()
+
+    return jsonify(json.loads(resume_str))
+
+@app.route("/resume/write/<id>", methods=['POST'])
+def resume_write(id):
+    resume_str = request.get_json()
+    print(f"Json extracted from request: {resume_str}")
+    paths = AppPaths(current_app.root_path)
+    
+
+    with(open(paths.get_local_path(FILE_DIRECTORY_NAME,f"resume_{id}.json"), 'w') as f):
+        f.write(json.dumps(resume_str))
+    
+    #return redirect(url_for("render_build_resume", resume_id = id))
 
 @app.route('/resume', methods=['GET', 'POST'])
 def render_html_resume():
     paths = AppPaths(current_app.root_path)
-    paths = AppPaths(current_app.root_path)
+    
     resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
    
     output = ""

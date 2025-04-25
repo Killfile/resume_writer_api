@@ -9,3 +9,4 @@ dependencies:
 - WeasyPrint
 - openai
 - pprintpp
+- flask_cors
