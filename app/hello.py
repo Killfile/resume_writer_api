@@ -240,17 +240,13 @@ def do_create_new_resume(company:str,title:str):
         f.write(json.dumps(resume_json))
 
     print(f"Create Resume wrote this JSON file: {json.dumps(resume_json, indent=4)}")
-    return redirect(url_for("render_build_resume", resume_id = resume_number))
+    return redirect("http://localhost:3000/"+str(resume_number))
 
 
 
 @app.route('/build_resume/<resume_id>', methods=['GET'])
 def render_build_resume(resume_id):
-    paths = AppPaths(current_app.root_path)
-    with(open(paths.get_local_path("files", f"resume_{resume_id}.json"),'r') as r):
-        resume_str = r.read()
-
-    resume_json = json.loads(resume_str)
+    resume_json = _get_resume_json_by_id(resume_id)
     print(f"Render Build Resume found this JSON resume: {json.dumps(resume_json, indent=4)}", flush=True)
     for e, experience in enumerate(resume_json["experience"]):
         skills = experience["skills"]
@@ -264,45 +260,76 @@ def render_build_resume(resume_id):
     
     return render_template("build_resume.html", resume_id=resume_id, resume=resume_json)
 
-@app.route('/rephrase_company/<id>/<name>', methods=['GET'])
-def do_rephrase_single_company(id, name):
-    paths = AppPaths(current_app.root_path)
-    with(open(paths.get_local_path("resume.json"),'r') as f):
-        json_str = f.read()
-    original_resume_json = json.loads(json_str)
-    original_experience_record = _find_element_in_list_matching_criteria(original_resume_json["experience"], lambda x:x["company"].lower()==name.lower())
-    if original_experience_record is None:
-        original_experience_record = _find_element_in_list_matching_criteria(original_resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
-
-    with(open(paths.get_local_path("files",f"resume_{id}.json"), 'r') as f):
-        json_str = f.read()
-    resume_json = json.loads(json_str)
-    experience_record = _find_element_in_list_matching_criteria(resume_json["experience"], lambda x:x["company"].lower()==name.lower())
-    if experience_record is None:
-        experience_record = _find_element_in_list_matching_criteria(resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
-
-    
-
+def _rephrase_responsibilities_with_skills(responsibilities_array, skills_array):
     message = f"""
         I am going to provide you with some resume line items. Rephrase them to include the following keywords. Do not add any keyword more than once. Do not add any keyword to more than one line item.\n\n
 
-        {json.dumps(experience_record["skills"])}
+        {json.dumps(skills_array)}
 
         Here are the resume line items: \n\n
 
-        {json.dumps(original_experience_record["responsibilities"])}
+        {json.dumps(responsibilities_array)}
 
         \n\nRephrasing should not change the number of responsibilities listed. You should return a 
         json array named "responsibilities" containing the rephrased results. 
     """
 
     reply_json = _get_json_from_openai_completion(message)
+    return reply_json["responsibilities"]
 
-    experience_record["responsibilities"] = reply_json["responsibilities"]
+
+@app.route('/rephrase_company/<id>/<name>', methods=['GET'])
+def do_rephrase_single_company(id, name):
+    paths = AppPaths(current_app.root_path)
+    original_resume_json = _get_originial_resume_json()
+    original_experience_record = _find_element_in_list_matching_criteria(original_resume_json["experience"], lambda x:x["company"].lower()==name.lower())
+    if original_experience_record is None:
+        original_experience_record = _find_element_in_list_matching_criteria(original_resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==name.lower())
+
+    resume_json = _get_resume_json_by_id(id)
+    experience_record = _get_experience_record_for_company(name, resume_json)
+
+    skills = experience_record["skills"]
+    responsibilties = original_experience_record["responsibilities"]
+    rephrased = _rephrase_responsibilities_with_skills(responsibilties, skills)
+
+    experience_record["responsibilities"] = rephrased
     with(open(paths.get_local_path("files",f"resume_{id}.json"), 'w') as f):
         f.write(json.dumps(resume_json))
     
     return redirect(url_for("render_build_resume", resume_id = id))
+
+def _get_originial_resume_json():
+    paths = AppPaths(current_app.root_path)
+    with(open(paths.get_local_path("resume.json"),'r') as f):
+        json_str = f.read()
+    original_resume_json = json.loads(json_str)
+    return original_resume_json
+
+def _get_experience_record_for_company(company_name, resume_json):
+    experience_record = _find_element_in_list_matching_criteria(resume_json["experience"], lambda x:x["company"].lower()==company_name.lower())
+    if experience_record is None:
+        experience_record = _find_element_in_list_matching_criteria(resume_json["individual_contributor_experience"], lambda x:x["company"].lower()==company_name.lower())
+    return experience_record
+
+@app.route('/rephrase_responsibilities', methods=['POST'])
+def de_rephrase_responsibilities_with_skills():
+    request_json = request.get_json()
+    skills = request_json["skills"]
+    responsibilities = request_json["responsibilities"]
+    rephrased = _rephrase_responsibilities_with_skills(responsibilities, skills)
+    return jsonify(rephrased)
+
+def _get_resume_json_by_id(id):
+    json_str = _get_resume_str_by_id(id)
+    json_resume = json.loads(json_str)
+    return json_resume
+
+def _get_resume_str_by_id(id):
+    paths = AppPaths(current_app.root_path)
+    with(open(paths.get_local_path("files",f"resume_{id}.json"), 'r') as f):
+        json_str = f.read()
+    return json_str
 
 @app.route('/map_skills', methods=['POST'])
 def do_map_skills():
@@ -336,7 +363,7 @@ def render_select_skills():
     return render_template('select_skills.html',unmatched_skills=unmatched_skills,companies=companies, skills=json.dumps(skills))
 
 
-def _get_json_from_openai_completion(ai_query):
+def _get_json_from_openai_completion(ai_query, ai_model="gpt-4o-mini"):
     class JobResponsibilities(BaseModel):
         responsibilities: list[str]
 
@@ -346,7 +373,7 @@ def _get_json_from_openai_completion(ai_query):
     
     client = OpenAI(api_key=api_key)
     completion = client.beta.chat.completions.parse(
-        model="gpt-4o-mini",
+        model=ai_model,
         response_format = JobResponsibilities,
         messages=[
             {"role": "developer", "content": "You are a resume writer and software career coach who knows how to fine-tune resumes to help land interviews."},
@@ -406,11 +433,7 @@ def _get_json_from_openai_assistant(ai_query):
 def render_json_resume_as_pdf(id):
     paths = AppPaths(current_app.root_path)
     
-
-    with(open(paths.get_local_path(FILE_DIRECTORY_NAME, f"resume_{id}.json"),'r') as r):
-        resume_str = r.read()
-
-    resume_json = json.loads(resume_str)
+    resume_json = _get_resume_json_by_id(id)
     company = resume_json["company_name"]
     title = resume_json["title_name"]
     writer = ResumeWriter(paths,None)
@@ -423,23 +446,20 @@ def render_json_resume_as_pdf(id):
 
 @app.route('/resume/read/<id>', methods=['GET'])
 def resume_read(id):
-    paths = AppPaths(current_app.root_path)
-    with(open(paths.get_local_path(FILE_DIRECTORY_NAME, f"resume_{id}.json"),'r') as r):
-        resume_str = r.read()
-
+    resume_str = _get_resume_str_by_id(id)
     return jsonify(json.loads(resume_str))
 
 @app.route("/resume/write/<id>", methods=['POST'])
 def resume_write(id):
-    resume_str = request.get_json()
-    print(f"Json extracted from request: {resume_str}")
+    resume_json = request.get_json()
+    print(f"Json extracted from request: {resume_json}")
     paths = AppPaths(current_app.root_path)
     
 
     with(open(paths.get_local_path(FILE_DIRECTORY_NAME,f"resume_{id}.json"), 'w') as f):
-        f.write(json.dumps(resume_str))
+        f.write(json.dumps(resume_json))
     
-    #return redirect(url_for("render_build_resume", resume_id = id))
+    return jsonify(resume_json)
 
 @app.route('/resume', methods=['GET', 'POST'])
 def render_html_resume():

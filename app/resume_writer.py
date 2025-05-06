@@ -21,6 +21,8 @@ class ResumeWriter:
 
         html = {}
 
+        html["summary_text"] = resume_json["summary"]["description"]
+
         html["experience"] = ""
         for experience in resume_json["experience"]:
             job_experience = self._render_job_experience(experience, templates["job"], templates["responsibility"])
@@ -48,6 +50,7 @@ class ResumeWriter:
             html["projects"] += project_html
         
         resume_html = templates["resume"]
+        resume_html = resume_html.replace("<<SummaryTextPlaceholder>>", html["summary_text"])
         resume_html = resume_html.replace("<<ExperiencePlaceholder>>",html["experience"])
         resume_html = resume_html.replace("<<ICExperiencePlaceholder>>", html["ic_experience_html"])
         resume_html = resume_html.replace("<<EducationPlaceholder>>", html["education"])
