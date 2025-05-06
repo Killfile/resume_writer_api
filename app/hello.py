@@ -11,6 +11,8 @@ from flask_cors import CORS
 
 from app.app_paths import AppPaths
 from app.resume_writer import ResumeWriter
+from resume_writer_api.app.array_lib import _find_element_in_list_matching_criteria, get_array_from_arguments
+import resume_writer_api.app.openai_lib as openai_lib
 from weasyprint import HTML, CSS
 
 app = Flask(__name__)
@@ -53,7 +55,7 @@ def initialize_application():
 
    
 
-    helper = OpenAIHelper(paths)
+    helper = openai_lib.OpenAIHelper(paths)
 
     file_object = helper._upload_file_to_openai(paths, "resume.json")
     output += "\n" + pp(file_object)
@@ -111,7 +113,7 @@ def _create_assistant(client, vector_store)->any:
 
 @app.route('/compute_intersection/<company>/<title>', methods=['GET', 'POST'])
 def compute_intersection(company:str, title:str):
-    skills = _get_array_from_arguments(request,"skills")
+    skills = get_array_from_arguments(request,"skills")
 
     overlap, unmatched_skills = _get_skills_overlap(skills)
 
@@ -373,7 +375,7 @@ def _get_json_from_openai_assistant(ai_query):
 
             if message.role == "assistant" and "```json" in message_value:
                 try:
-                    reply_json = json.loads(_extract_json_from_message(message_value))
+                    reply_json = json.loads(openai_lib._extract_json_from_message(message_value))
                     print(f"*****************JSON extracted from reply: {json.dumps(reply_json)}", flush=True)
                 except Exception as e:
                     print(f"Error extracting JSON from reply: {e}",flush=True)
@@ -438,7 +440,7 @@ def render_html_resume():
         an array of rephrased "responsibilities", an array of used keywords, and an array of unused keywords.
     """
 
-    helper = OpenAIHelper(paths)
+    helper = openai_lib.OpenAIHelper(paths)
     
     reply_json = helper.send_message_to_openai_assistant(message_content)
 
