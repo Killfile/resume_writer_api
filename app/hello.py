@@ -51,18 +51,17 @@ def initialize_application():
     with open(paths.get_local_path("chatgpt.token"), 'r') as f:
         api_key = f.read()
 
-    client = OpenAI(api_key=api_key)
+   
 
-    
+    helper = OpenAIHelper(paths)
 
-    file_object = _upload_file_to_openai(paths, client, "resume.json")
+    file_object = helper._upload_file_to_openai(paths, "resume.json")
     output += "\n" + pp(file_object)
 
-    vector_store = _create_vector_store_from_file(client, file_object)
+    vector_store = helper._create_vector_store_from_file(file_object)
     output += "\n" + pp(vector_store)
 
-
-    assistant = _create_assistant(client, vector_store)
+    assistant = helper._create_assistant(vector_store)
     output += "\n" + pp(assistant)
 
     return_value =  f'''
@@ -138,65 +137,19 @@ def _get_skills_overlap(array_data)->Tuple[any, list]:
 
     all_overlapping_skills = set()
 
+    provided_keywords_lcase_set = set(lcase_array)
+    print(f"To match: {provided_keywords_lcase_set}", flush=True)
     for company in matched_skills["highlighted experience"]:
-        company_intersection = set(company["keywords"]).intersection(set(lcase_array))
+        company_keywords_set = set(company["keywords"])
+        
+        company_intersection = company_keywords_set.intersection(provided_keywords_lcase_set)
+        print(f"Company: {company["company"]}\n\nCompany Keywords:{company_keywords_set}\n\nIntersection: {company_intersection}")
         all_overlapping_skills = all_overlapping_skills.union(company_intersection)
         company["keywords"] = list(company_intersection)
 
     unmatched_skills = list(set(lcase_array).difference(all_overlapping_skills))    
     return matched_skills,unmatched_skills
    
-def _trim_before_substring(main_string:str, substring:str)->str:
-    index = main_string.find(substring)
-    if index != -1:
-        return main_string[index:]
-    return main_string
-
-def _trim_after_last_substring(main_string:str, substring)->str:
-    index = main_string.rfind(substring)
-    if index != -1:
-        return main_string[:index + len(substring)]
-    return main_string
-
-def _extract_json_from_message(message):
-    json_end_marker = "```"
-    json_start_marker = json_end_marker + "json"
-    return_value = _trim_before_substring(_trim_after_last_substring(message,json_end_marker),json_start_marker)
-    return_value = return_value.replace(json_start_marker,"",1)
-    return_value = return_value.replace(json_end_marker,"",1)
-    return return_value
-
-def _get_array_from_arguments(request,key):
-    print(f"Rquest method is {request.method}",flush=True)
-    return_value = None
-    if request.method == 'POST':
-        try:
-            post_key_value = request.form.get(key)
-            print(f"Found value of {post_key_value} for {key} in POST",flush=True)
-            post_json_object = json.loads(post_key_value)
-            print(f"About to return {pp(post_json_object)} from get_array...",flush=True)
-            return_value = post_json_object
-        except Exception as e:
-            print(f"Something went wrong parsing post json. {e}. Running getlist.", flush=True)
-            return_value = request.form.getlist(key)
-    else:
-        # http://localhost:6969/compute_intersection?skills=[%22AJAX%22,%22CSS%22,%22Agile%22]
-        try:
-            get_key_value = request.args.get(key)
-            print(f"Found value of {get_key_value} for {key} in GET",flush=True)
-            get_json_object = json.loads(get_key_value)
-            print(f"About to return {pp(get_json_object)} from get_array...",flush=True)
-            return_value = get_json_object
-        except Exception as e:
-            return_value = request.args.getlist(key)
-    return return_value
-
-def _find_element_in_list_matching_criteria(to_search:list, criteria:callable):
-    for item in to_search:
-        if criteria(item) == True:
-            return item
-    return None
-
 def _find_safe_resume_number(paths: AppPaths, filename:str):
     resume_number = 1
     while os.path.exists(paths.get_local_path("files",f"resume_{resume_number}.json")) == True:
@@ -214,7 +167,7 @@ def do_create_new_resume(company:str,title:str):
     paths = AppPaths(current_app.root_path)
     resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
    
-    skills = _get_array_from_arguments(request,"skills")
+    skills = get_array_from_arguments(request,"skills")
 
     print(f"Do Create Resume was called for company: {company} and title: {title} and passed these skills: {skills}")
 
@@ -334,7 +287,7 @@ def _get_resume_str_by_id(id):
 @app.route('/map_skills', methods=['POST'])
 def do_map_skills():
     paths = AppPaths(current_app.root_path)
-    skills = _get_array_from_arguments(request,"skills")
+    skills = get_array_from_arguments(request,"skills")
     with(open(paths.get_local_path('full_skills.json'), 'r') as f):
         json_str = f.read()
     skills_json = json.loads(json_str)
@@ -353,7 +306,7 @@ def do_map_skills():
 @app.route('/select_skills', methods=['GET','POST'])
 def render_select_skills():
     paths = AppPaths(current_app.root_path)
-    skills = _get_array_from_arguments(request,"skills")
+    skills = get_array_from_arguments(request,"skills")
 
     overlap, unmatched_skills = _get_skills_overlap(skills)
     with(open(paths.get_local_path('full_skills.json'), 'r') as f):
@@ -468,19 +421,12 @@ def render_html_resume():
     resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
    
     output = ""
-    job_requested_keywords = _get_array_from_arguments(request,"skills")
+    job_requested_keywords = get_array_from_arguments(request,"skills")
     
     print(f"Requested: {job_requested_keywords}", flush=True)
     intersection, unmatched_skills = _get_skills_overlap(job_requested_keywords)
     print(f"Computed intersection: {pp(intersection)}")
-    
-    with open(paths.get_local_path("chatgpt.token"), 'r') as f:
-        api_key = f.read()
 
-    client = OpenAI(api_key=api_key)
-    assistant = client.beta.assistants.retrieve("asst_3Y6QVpOimmPe4952EOXijewl")
-    thread = client.beta.threads.create()
-    
     message_content = f"""
         Rephrase each of the individual "responsibilities" in each "experience" section of the resume emphasizing 
         the "keywords" provided on a per-company basis below:\n\n
@@ -491,40 +437,12 @@ def render_html_resume():
         json array with one object per item in the "experience" array. Each object should contain a "company" name, 
         an array of rephrased "responsibilities", an array of used keywords, and an array of unused keywords.
     """
+
+    helper = OpenAIHelper(paths)
     
-    print(f"Message for OpenAI: {message_content}", flush=True)
+    reply_json = helper.send_message_to_openai_assistant(message_content)
 
-    message = client.beta.threads.messages.create(
-        thread_id=thread.id,
-        role="user",
-        content=message_content)
-
-    run = client.beta.threads.runs.create_and_poll(
-        thread_id=thread.id,
-        assistant_id=assistant.id,
-        instructions="Rephrase each resume responsibility for the requested company using the provided keywords. The number of responsibilities returned should match the number listed in resume document. Keywords should not be formatted differently than other text."
-    )
-
-    reply_json = None
-    if run.status == 'completed': 
-        messages = client.beta.threads.messages.list(
-            thread_id=thread.id
-        )
-        for index, message in enumerate(messages.data):
-            message_value = message.content[0].text.value
-            print(f"Reply from OpenAI: {message_value}",flush=True)
-
-            if "```json" in message_value:
-                output+= "******\n\n"
-                try:
-                    reply_json = json.loads(_extract_json_from_message(message_value))
-                    print(f"JSON extracted from reply: {json.dumps(reply_json)}", flush=True)
-                except Exception as e:
-                    print(f"Error extracting JSON from reply: {e}",flush=True)
-    else:
-        print(f"Run Status is: {run.status}",flush=True)
-
-    skills = _get_array_from_arguments(request,"skills")
+    skills = get_array_from_arguments(request,"skills")
 
     overlap, unmatched_skills = _get_skills_overlap(skills)
 
