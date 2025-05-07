@@ -18,7 +18,7 @@
           "Launched the 0x API v2 and implemented support processes around it to ensure a successful public rollout.",
           "Reformed hiring process to eliminate bottlenecks and reduce time-to-hire; coached managers and VPs on hiring.",
           "Coached product leaders through roadmap exercises and instituted a prioritization framework resulting in a 100% delivery rate of high priority items on or ahead of schedule.",
-          "Introduced a security response process and SLA for vulnerable dependencies which reduced API wide attack surface by >90% for critical and high priority issues without delaying deliverables."
+          "Introduced a security response process and SLA for vulnerable dependencies which reduced API wide attack surface by more than 90% for critical and high priority issues without delaying deliverables."
         ]
       },
       {
@@ -51,7 +51,7 @@
         "position": "Engineering Manager",
         "dates": "09/2019 - 07/2020",
         "responsibilities": [
-          "Launched v1 of “Voice” on time, under budget, and with zero release-blocking defects.",
+          "Launched v1 of Voice on time, under budget, and with zero release-blocking defects.",
           "Restructured organization-wide approach to versioning, reducing merge-conflicts and cutting time-to-merge by 20%.",
           "Transformed an under-performing C# and C++ team into one that hit sprint commitments 100% of the time while maintaining velocity."
         ]
