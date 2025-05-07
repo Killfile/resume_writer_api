@@ -94,7 +94,7 @@ def compute_intersection(company:str, title:str):
                            supplied_skills=pp(skills), 
                            unmatched_skills=pp(unmatched_skills), 
                            overlapping_skills = json.dumps(overlap, indent=4),
-                           skills=skills,
+                           skills=json.dumps(skills),
                            company=company,
                            title=title)
 
