@@ -1,6 +1,8 @@
 import os
 import re
 from typing import Tuple
+from app import openai_lib
+from app.array_lib import _find_element_in_list_matching_criteria, get_array_from_arguments
 from flask import Flask, request, current_app, send_from_directory, render_template, redirect, url_for, jsonify
 import json
 from openai import OpenAI
@@ -11,8 +13,7 @@ from flask_cors import CORS
 
 from app.app_paths import AppPaths
 from app.resume_writer import ResumeWriter
-from resume_writer_api.app.array_lib import _find_element_in_list_matching_criteria, get_array_from_arguments
-import resume_writer_api.app.openai_lib as openai_lib
+
 from weasyprint import HTML, CSS
 
 app = Flask(__name__)
@@ -78,38 +79,6 @@ def initialize_application():
                     '''
     return return_value
 
-def _create_vector_store_from_file(client, file_object):
-    vector_store = client.beta.vector_stores.create(
-        file_ids=[file_object.id],
-        name="Resume",
-    )
-    
-    return vector_store
-
-def _upload_file_to_openai(paths, client, filename:str):
-    local_path = paths.get_local_path(filename)
-    size = os.path.getsize(local_path)
-    print(f"{local_path} is {size}", flush=True)
-    with open(local_path, 'rb') as r:
-        
-        file_object = client.files.create(
-            file = r,
-            purpose="assistants"
-        )
-
-    return file_object
-
-def _create_assistant(client, vector_store)->any:
-    my_assistant = client.beta.assistants.create(
-        instructions="You are a career coach and resume writer; you rewrite candidate resumes to make them more attractive to prospective employers and highlight their skills.",
-        name="Career Coach",
-        tools=[{"type": "file_search"}],
-        model="gpt-4o-mini",
-        response_format={"type": "text"},
-        tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
-        
-    )
-    return my_assistant
 
 @app.route('/compute_intersection/<company>/<title>', methods=['GET', 'POST'])
 def compute_intersection(company:str, title:str):

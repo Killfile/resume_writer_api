@@ -137,24 +137,15 @@ class OpenAIHelper:
         return reply_json
 
 
-def _upload_file_to_openai(self, paths, filename:str):
-    local_path = paths.get_local_path(filename)
-    size = os.path.getsize(local_path)
-    print(f"{local_path} is {size}", flush=True)
-    with open(local_path, 'rb') as r:
+    def _upload_file_to_openai(self, paths, filename:str):
+        local_path = paths.get_local_path(filename)
+        size = os.path.getsize(local_path)
+        print(f"{local_path} is {size}", flush=True)
+        with open(local_path, 'rb') as r:
 
-        file_object = self._client.files.create(
-            file = r,
-            purpose="assistants"
-        )
+            file_object = self._client.files.create(
+                file = r,
+                purpose="assistants"
+            )
 
-    return file_object
-
-
-def _create_vector_store_from_file(self, file_object):
-    vector_store = self._client.beta.vector_stores.create(
-        file_ids=[file_object.id],
-        name="Resume",
-    )
-
-    return vector_store
+        return file_object
