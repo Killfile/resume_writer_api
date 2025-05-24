@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+    <head>
+    <title>MarkApplied API</title>
+    </head>
+    <body>  
+        <h1>Skills overlap</h1>
+        <p>Note that skills comparisons are case insensitive</p>
+        <p>To render a resume in a single click based on this match, <a href="{{url_for('do_create_new_resume_by_id',id=id)}}">click here</a></p>
+        <h3>Skills overlap from supplied array...</h3>
+        <h4>Supplied Skills Arry</h4>
+        <pre>{{supplied_skills}}</pre>
+        <h4>Unmatched Skills</h4>
+        <p>To match any of these skills, <a href="{{url_for('render_select_skills',skills=skills)}}">click here.</a>.</p>
+        <pre>{{unmatched_skills}}</pre>
+        <h4>Overlap with stored skills database</h4>
+        <pre>{{overlapping_skills}}</pre>
+    </body>

@@ -15,8 +15,8 @@
         "position": "Sr Engineering Manager",
         "dates": "07/2024 - 11/2024",
         "responsibilities": [
-          "Launched the 0x API v2 and implemented support processes around it to ensure a successful public rollout.",
-          "Reformed hiring process to eliminate bottlenecks and reduce time-to-hire; coached managers and VPs on hiring.",
+          "Launched the 0x API v2 and implemented support processes around it, delivering a 99.82% uptime.",
+          "Reformed hiring process to eliminate bottlenecks and reduce time-to-hire by 30%; coached managers and VPs on recruiting and retaining a globally remote team.",
           "Coached product leaders through roadmap exercises and instituted a prioritization framework resulting in a 100% delivery rate of high priority items on or ahead of schedule.",
           "Introduced a security response process and SLA for vulnerable dependencies which reduced API wide attack surface by more than 90% for critical and high priority issues without delaying deliverables."
         ]
@@ -27,11 +27,11 @@
         "position": "Sr Engineering Manager",
         "dates": "04/2021 - 04/2024",
         "responsibilities": [
-          "Launched V2 of Tracer’s bulk data processing engine reducing compute costs by 20%.",
-          "Replaced a legacy front-end application with an all-Typescript/React UI with zero downtime or feature loss.",
-          "Lead a team of 15 in cross-functional technical projects resulting in performance improvements of ~15%.",
+          "Launched V2 of Tracer’s SaaS analytics product, reducing compute costs by 20%.",
+          "Planned and directed the replacement of a legacy front-end application with an all-Typescript/React UI leveraging agile methodologies to deliver with zero downtime or feature loss.",
+          "Developed a technical strategy around tech-debt and performance optimization; led a team of 15 in is execution, resulting in performance gains of ~15%.",
           "Coached other managers driving company-wide implementation of engineering best practices reducing defect rate to less than 2%.",
-          "Recruited and retained a global engineering organization focused on Python and React development."
+          "Recruited and retained a global engineering organization focused on Python and React development with 95% retention over 3 years."
         ]
       },
       {
@@ -51,9 +51,9 @@
         "position": "Engineering Manager",
         "dates": "09/2019 - 07/2020",
         "responsibilities": [
-          "Launched v1 of Voice on time, under budget, and with zero release-blocking defects.",
+          "Launched v1 of Voice - a web3 social media application - on time, under budget, and with zero release-blocking defects.",
           "Restructured organization-wide approach to versioning, reducing merge-conflicts and cutting time-to-merge by 20%.",
-          "Transformed an under-performing C# and C++ team into one that hit sprint commitments 100% of the time while maintaining velocity."
+          "Transformed an under-performing C# and C++ team into one that hit sprint commitments 100% of the time while maintaining velocity through agile coaching and technical leadership."
         ]
       },
       {
@@ -62,10 +62,10 @@
         "position": "Software Development Manager",
         "dates": "10/2014 - 08/2019",
         "responsibilities": [
-          "Launched the PUMP project in collaboration with the US Department of Energy on time and under budget.",
+          "Directed execution of a $4.3M project in collaboration with the US Department of Energy; delivered on time and under budget.",
           "Designed and delivered a groundbreaking cryptographic isolation technique which made product/market fit possible and allowed profitable operation of the project at-scale across multiple clients.",
           "Introduced and up-skilled the backend development team on GitOps & DevOps with Terraform, improving scaling time by 3 orders of magnitude.",
-          "Implemented CI/CD with robust acceptance testing in our enterprise SOA system, deploying backend (C#) and frontend (TypeScript/Angular) in as little as 20 minutes.",
+          "Prioritized and led addition of CI/CD and acceptance testing tooling, deploying backend (C#) and frontend (TypeScript/Angular) in as little as 20 minutes.",
           "Cultivated a close-knit, collaborative team culture which resulted in a 0% loss rate of engineering employees to regional competitors."
         ]
       },
@@ -160,9 +160,9 @@
         "years": 2024
       },
       {
-        "project": "MarkApplied",
+        "project": "Resazine/MarkApplied",
         "description": "AI powered job tracker and resume builder (used to generate this resume)",
-        "years": 2024
+        "years": "2024 - 2025"
       },
       {
         "project": "Enigma Code Kata",

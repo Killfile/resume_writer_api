@@ -79,6 +79,70 @@ def initialize_application():
                     '''
     return return_value
 
+@app.route("/start_resume_by_fetch/", methods=['POST'])
+def start_resume_by_fetch():
+    resume_number = _do_start_resume()
+    return str(resume_number)
+
+@app.route('/start_resume/', methods=['POST'])
+def start_resume():
+    resume_number = _do_start_resume()
+
+    #print(f"Start Resume wrote this JSON file: {json.dumps(resume_json, indent=4)}")
+    print(f"Reached end of start resume", flush=True)
+    return redirect(url_for("compute_intersection_by_id", id = resume_number))
+
+def _do_start_resume():
+    print(f"start_resume sees request.form as {request.form} and request.args as {request.args.to_dict()}", flush=True)
+    if not request.form and not request.args.to_dict():
+        request_json = request.get_json()
+        company = request_json["company"]
+        title = request_json["title"]
+        skills = request_json["skills"]
+    else:
+        company = request.form.get("company")
+        title = request.form.get("title")
+        skills = get_array_from_arguments(request,"skills")
+        
+    paths = AppPaths(current_app.root_path)
+    resume_number, source, dest = _find_safe_resume_number(paths, "resume.json")
+   
+   
+
+    print(f"Start Resume was called for company: {company} and title: {title} and passed these skills: {skills}",flush=True)
+
+    with(open(source,'r') as f):
+        resume_str = f.read()
+    resume_json = json.loads(resume_str)
+    resume_json["company_name"] = company
+    resume_json["title_name"] = title
+    resume_json["skills"] = skills
+
+    with(open(dest,'w') as f):
+        f.write(json.dumps(resume_json))
+    return resume_number
+   
+
+@app.route('/compute_intersection/<id>', methods=['GET'])
+def compute_intersection_by_id(id:int):
+    print("Hit compute_intersection_by_id", flush=True)
+    resume_json = _get_resume_json_by_id(id)
+    supplied_skills = resume_json["skills"]
+    company = resume_json["company_name"]
+    title = resume_json["title_name"]
+
+    overlap, unmatched_skills = _get_skills_overlap(supplied_skills)
+
+    return render_template("skills_overlap_by_id.html", 
+                           id=id,
+                           supplied_skills=pp(supplied_skills), 
+                           unmatched_skills=pp(unmatched_skills), 
+                           overlapping_skills = json.dumps(overlap, indent=4),
+                           skills=json.dumps(supplied_skills),
+                           company=company,
+                           title=title)
+
+
 
 @app.route('/compute_intersection/<company>/<title>', methods=['GET', 'POST'])
 def compute_intersection(company:str, title:str):
@@ -132,6 +196,24 @@ def _find_safe_resume_number(paths: AppPaths, filename:str):
     dest = paths.get_local_path("files",f"{parts[0]}_{resume_number}.{parts[1]}")
     shutil.copyfile(source,dest)
     return resume_number, source, dest
+
+@app.route('/create_new_resume/<id>')
+def do_create_new_resume_by_id(id:id):
+    resume_json = _get_resume_json_by_id(id)
+    skills = resume_json["skills"]
+    overlap, unmatched_skills = _get_skills_overlap(skills)
+
+    for exp_company in resume_json["experience"]:
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == exp_company["company"].lower())
+        exp_company["skills"] = company_element["keywords"]
+
+    for exp_company in resume_json["individual_contributor_experience"]:
+        company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == exp_company["company"].lower())
+        exp_company["skills"] = company_element["keywords"]
+
+    _write_resume_json_by_id(resume_json, id)
+    return redirect("http://localhost:3000/"+str(id))
+    
 
 @app.route('/create_new_resume/<company>/<title>')
 def do_create_new_resume(company:str,title:str):
@@ -223,6 +305,17 @@ def do_rephrase_single_company(id, name):
     
     return redirect(url_for("render_build_resume", resume_id = id))
 
+@app.route('/rephrase_summary/<id>/', methods=['GET'])
+def do_rephrase_summary(id):
+    paths = AppPaths(current_app.root_path)
+    resume_json = _get_resume_json_by_id(id)
+    resume_json.summary.description = "New summary"
+    
+    with(open(paths.get_local_path("files",f"resume_{id}.json"), 'w') as f):
+        f.write(json.dumps(resume_json))
+
+    return redirect(url_for("render_build_resume", resume_id = id))
+
 def _get_originial_resume_json():
     paths = AppPaths(current_app.root_path)
     with(open(paths.get_local_path("resume.json"),'r') as f):
@@ -248,6 +341,11 @@ def _get_resume_json_by_id(id):
     json_str = _get_resume_str_by_id(id)
     json_resume = json.loads(json_str)
     return json_resume
+
+def _write_resume_json_by_id(resume_json, id:int):
+    paths = AppPaths(current_app.root_path)
+    with(open(paths.get_local_path("files",f"resume_{id}.json"), 'w') as f):
+        f.write(json.dumps(resume_json))
 
 def _get_resume_str_by_id(id):
     paths = AppPaths(current_app.root_path)
