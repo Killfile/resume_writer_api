@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Tuple
+from typing import List, Tuple
 from app.array_lib import _find_element_in_list_matching_criteria, get_array_from_arguments
 from flask import Flask, request, current_app, send_from_directory, render_template, redirect, url_for, jsonify
 import json
@@ -157,6 +157,8 @@ def do_create_new_resume_by_id(id:id):
     skills = resume_json["skills"]
     overlap, unmatched_skills = _get_skills_overlap(skills)
 
+
+
     for exp_company in resume_json["experience"]:
         company_element = _find_element_in_list_matching_criteria(overlap["highlighted experience"], lambda x: x["company"] == exp_company["company"].lower())
         exp_company["skills"] = company_element["keywords"]
@@ -188,57 +190,121 @@ def render_build_resume(resume_id):
     
     return render_template("build_resume.html", resume_id=resume_id, resume=resume_json)
 
-def _rephrase_responsibilities_with_skills(responsibilities_array, skills_array):
+def _rephrase_responsibilities_with_skills(responsibilities_array, skills_array, custom_instructions=None):
+    context_data = {
+        "keywords": skills_array,
+        "resume line items": responsibilities_array
+    }
+    instructions = """
+        I am going to provide you with some resume line items. Rephrase them to include the supplied keywords. 
+        Do not add any keyword more than once. Do not add any keyword to more than one line item. 
+        Do not replace keywords that are already in a line item with other keywords.
+    """
+
+    if custom_instructions is not None:
+        instructions = custom_instructions    
+
     message = f"""
-        I am going to provide you with some resume line items. Rephrase them to include the following keywords. Do not add any keyword more than once. Do not add any keyword to more than one line item. Do not replace keywords that are already in a line item with other keywords.\n\n
+        {instructions}
+        Rephrasing should not change the number of line items. 
+        You should return a json array named "responsibilities" containing the rephrased results. \n\n
 
-        {json.dumps(skills_array)}
-
-        Here are the resume line items: \n\n
-
-        {json.dumps(responsibilities_array)}
-
-        \n\nRephrasing should not change the number of line items. You should return a json array named "responsibilities" containing the rephrased results. 
+        {json.dumps(context_data)}
     """
     class JobResponsibilities(BaseModel):
         responsibilities: list[str]
     reply_json = _get_json_from_openai_completion(message, JobResponsibilities)
     return reply_json["responsibilities"]
 
-def _generate_summary_from_skills_and_description(skills_array, job_description):
+def _generate_summary_from_skills_and_description(skills_array, job_description, experience, custom_instructions=None):
+
     context_data = {
         "skills": skills_array,
-        "job_description": job_description
-    }
+        "previous_experience": experience,
+        "job_description": job_description,
+        }
+
+    instructions = """
+        Here is a job description I'm interested in. 
+        Please craft a concise professional summary that highlights my expertise while aligning with the role's responsibilities and qualifications. 
+        Incorporate leadership experience, technical skills, and any industry-specific nuances as needed. 
+        
+        Tone and style: All sentences should be structured as if they start with 'I am' or 'I am a' but should not actually include those words.
+    """
+
+    if custom_instructions is not None:
+        instructions = custom_instructions   
+
+    #   You should return a json object with an element named "summary" which contains the result.
+
     message = f"""
-    Here is a job description I'm interested in. Please craft a concise professional summary that highlights my expertise while aligning with the role's responsibilities and qualifications. Incorporate leadership experience, technical skills, and any industry-specific nuances as needed.
-    {json.dumps(context_data)}
-    You should return a json object with an element named "summary" which contains the result.
+        {instructions}
+
+
+        {json.dumps(context_data)}
     """
     class ResumeSummary(BaseModel):
         summary: str
+        additional_suggestions: List[str]
+
     reply_json = _get_json_from_openai_completion(message, ResumeSummary)
-    return reply_json["summary"]
+    return reply_json
 
+@app.route('/rate_resume/<id>', methods=['GET'])
+def do_rate_resume(id):
+    def remove_key_recursive(data, key_to_remove):
+        if isinstance(data, dict):
+            return {k: remove_key_recursive(v, key_to_remove) for k, v in data.items() if k != key_to_remove}
+        elif isinstance(data, list):
+            return [remove_key_recursive(item, key_to_remove) for item in data]
+        else:
+            return data
 
+    resume_json = remove_key_recursive(_get_resume_json_by_id(id), "skills")
+    message = f"""
+        The included JSON represents a resume to be submitted to a job ad.  
+        The company, title, and job description for the job ad are represented by the company_name, title_name, and job_description fields.
+        The rest of the JSON file represents the applicant resume.
+        <first> Evaluate the job description; identify the 3 most important hard and soft skills, and the most relevant experience from the resume.
+        <second> Evaluate how well the resume matches the job description along three dimentions, each of which will be scored on a scale of 0-100:
+        1. Leadership Experience and Seniority
+        2. Technical Skills and Industry Experience
+        3. Soft Skills 
 
+        Your explanation of the score should ONLY note how the resume can be improved and include specific suggestions for improvement; it should not discuss the resume's strengths.
+        {resume_json}
+    """
 
+    class JobDescriptionAssessment(BaseModel):
+        most_important_hard_skills: List[str]
+        most_important_soft_skills: List[str]
+        most_relevant_experience: List[str]
 
+    class ScoreComponents(BaseModel):
+        leadership_experience: int
+        technical_skills: int
+        soft_skills: int
 
+    class ResumeGrade(BaseModel):
+        job_description_assessment: JobDescriptionAssessment
+        score_components: ScoreComponents
+        explanation: List[str]
 
+    reply_json = _get_json_from_openai_completion(message, ResumeGrade, temperature=0.0)
+    return reply_json
 
-
-
-@app.route('/rephrase_summary/<id>', methods=['GET'])
+@app.route('/rephrase_summary/<id>', methods=['POST'])
 def do_rephrase_summary(id):
-    paths = AppPaths(current_app.root_path)
+    request_json = request.get_json()
+    custom_instructions = request_json.get("custom_instructions")
+
     resume_json = _get_resume_json_by_id(id)
     job_description = resume_json["job_description"]
     skills = resume_json["skills"]
-    description = _generate_summary_from_skills_and_description(skills, job_description)
+    experience = resume_json["experience"]
+    description = _generate_summary_from_skills_and_description(skills, job_description, experience, custom_instructions)
     resume_json["summary"]["description"] = description
-    with(open(paths.get_local_path("files",f"resume_{id}.json"), 'w') as f):
-        f.write(json.dumps(resume_json))
+    _write_resume_json_by_id(resume_json,id)
     
     return jsonify(description)
 
@@ -247,6 +313,7 @@ def de_rephrase_responsibilities_with_skills():
     request_json = request.get_json()
     skills = request_json["skills"]
     responsibilities = request_json["responsibilities"]
+    
     rephrased = _rephrase_responsibilities_with_skills(responsibilities, skills)
     return jsonify(rephrased)
 
@@ -298,7 +365,7 @@ def render_select_skills():
     return render_template('select_skills.html',unmatched_skills=unmatched_skills,companies=companies, skills=json.dumps(skills))
 
 
-def _get_json_from_openai_completion(ai_query, response_format, ai_model="gpt-4o-mini"):
+def _get_json_from_openai_completion(ai_query, response_format, ai_model="gpt-4o-mini", temperature=0.8):
     
 
     paths = AppPaths(current_app.root_path)
@@ -310,9 +377,10 @@ def _get_json_from_openai_completion(ai_query, response_format, ai_model="gpt-4o
         model=ai_model,
         response_format = response_format,
         messages=[
-            {"role": "developer", "content": "You are a resume writer and software career coach who knows how to fine-tune resumes to help land interviews."},
+            {"role": "developer", "content": "You are a resume writer and software career coach specialized in the software development industry who knows how to fine-tune resumes to help land interviews."},
             {"role": "user", "content": ai_query}
-        ]
+        ],
+        temperature=temperature
     )
 
     print(completion.choices[0].message,flush=True)
@@ -346,6 +414,7 @@ def resume_write(id):
     print(f"Json extracted from request: {resume_json}")
     paths = AppPaths(current_app.root_path)
     
+
 
     with(open(paths.get_local_path(FILE_DIRECTORY_NAME,f"resume_{id}.json"), 'w') as f):
         f.write(json.dumps(resume_json))

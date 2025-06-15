@@ -35,25 +35,15 @@
         ]
       },
       {
-        "company": "Voice",
-        "location": "Bronx, NY",
-        "position": "Software Development Manager",
-        "dates": "07/2020 - 03/2021",
-        "responsibilities": [
-          "Managed two teams in the US and South America which delivered security and compliance solutions for token monetization.",
-          "Reorganized teams to decouple SmartContract development from feature development allowing geographic distribution of the SmartContract team to reduce costs and boost retention to 100%.",
-          "Planned, prioritized, and implemented CI/CD process, tripling release frequency."
-        ]
-      },
-      {
-        "company": "Block.one",
+        "company": "Block.one/Voice",
         "location": "Blacksburg, VA",
         "position": "Engineering Manager",
-        "dates": "09/2019 - 07/2020",
+        "dates": "09/2019 - 03/2021",
         "responsibilities": [
-          "Launched v1 of Voice - a web3 social media application - on time, under budget, and with zero release-blocking defects.",
-          "Restructured organization-wide approach to versioning, reducing merge-conflicts and cutting time-to-merge by 20%.",
-          "Transformed an under-performing C# and C++ team into one that hit sprint commitments 100% of the time while maintaining velocity through agile coaching and technical leadership."
+          "Managed two teams security and compliance engineering teams in the US and South America which launched v1 of Voice - a web3 social media application - on time, under budget, and with zero release-blocking defects.",
+          "Transformed an under-performing C# and C++ team into one that hit sprint commitments 100% of the time while maintaining velocity through agile coaching and technical leadership.",
+          "Defined and implemented recruting, evaluation/leveling, and retention processes for newly-remote teams; hired 40+ developers into the engineering organization.",
+          "Restructured organization-wide approach to versioning and implemented a CI/CD process, tripling release frequency and cutting time-to-merge by 20%."
         ]
       },
       {

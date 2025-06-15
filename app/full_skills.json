@@ -1558,7 +1558,7 @@
             ]
         },
         {
-            "company":"Block.one",
+            "company":"Block.one/Voice",
             "keywords":
             [
 
@@ -2103,13 +2103,7 @@
                 "develop talent",
                 "infrastructure-as-code",
                 "vendor partnerships",
-                "high-growth startup"
-            ]
-        },
-        {
-            "company":"Voice",
-            "keywords":
-            [
+                "high-growth startup",
                 ".Net",
                 ".NET Core",
                 ".NET Framework",

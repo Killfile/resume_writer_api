@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christopher Thomas - Resume</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            color: #333;
+            font-size: 70%;
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        h1 {
+            font-size: 2em;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        h2 {
+            font-size: 1.5em;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 5px;
+            margin-top: 20px;
+        }
+        h3 {
+            font-size: 1.2em;
+            margin-top: 15px;
+        }
+        h4 {
+            font-size: 1em;
+            margin-top: 10px;
+        }
+        .header-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header-info p {
+            margin: 2px 0;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .experience-item, .education-item, .project-item {
+            margin-bottom: 15px;
+            padding-left: 15px;
+            border-left: 3px solid #3498db;
+        }
+        .experience-item h3, .education-item h3, .project-item h3 {
+            margin-bottom: 0;
+        }
+        .experience-item p, .education-item p, .project-item p {
+            margin: 2px 0;
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding-left: 0;
+        }
+        ul li {
+            margin-bottom: 5px;
+        }
+        .responsibility-list {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+        .responsibility-list li {
+            margin-bottom: 5px;
+        }
+        .individual-contributor-section {
+            margin-bottom: 15px;
+        }
+        .individual-contributor-section h2 {
+            font-size: 1.1em;
+            color: #888;
+            font-weight: normal;
+            border-bottom: none;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .individual-contributor-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 24px;
+        }
+        .individual-contributor-list .experience-item {
+            border-left: 2px solid #eee;
+            padding-left: 8px;
+            margin-bottom: 0;
+            background: none;
+            font-size: 0.97em;
+            color: #666;
+        }
+        .individual-contributor-list h3 {
+            font-size: 1em;
+            margin: 0 0 2px 0;
+            color: #888;
+        }
+        .individual-contributor-list p,
+        .individual-contributor-list ul {
+            margin: 0 0 2px 0;
+        }
+        .individual-contributor-list ul {
+            padding-left: 16px;
+            margin-bottom: 0;
+        }
+        @media (max-width: 700px) {
+            .individual-contributor-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>CHRISTOPHER THOMAS</h1>
+    <div class="header-info">
+        <p>Engineering Leader, Executive, Senior Manager/Director</p>
+        <p>Christiansburg, VA 24073 | (540) 808-2782 | chris.thomas@cleaner.codes | linkedin.com/in/killfile</p>
+    </div>
+
+    <div class="section">
+        <h2>Summary</h2>
+        <p>
+            <<SummaryTextPlaceholder>>
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>Experience</h2>
+        
+        <<ExperiencePlaceholder>>
+        
+    </div>
+
+    <div class="section">
+        <h2>Individual Contributor Experience</h2>
+        
+        <div class="individual-contributor-section">
+            <div class="individual-contributor-list">
+                <<ICExperiencePlaceholder>>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Education</h2>
+        
+        <<EducationPlaceholder>>    
+        
+    </div>
+
+    <div class="section">
+        <h2>Training</h2>
+        
+        <<TrainingPlaceholder>>
+        
+    </div>
+
+    <div class="section">
+        <h2>Side Projects</h2>
+        
+        <<ProjectsPlaceholder>>
+        
+    </div>
+</body>
+</html>

@@ -13,11 +13,11 @@ class ResumeWriter:
     
     def write_resume(self, resume_json):
         templates = {}
-        templates["resume"] = self._read_template("resume.html")
-        templates["job"] = self._read_template("job.html")
-        templates["responsibility"] = self._read_template("job_responsibility.html")
-        templates["education"] = self._read_template("education.html")
-        templates["project"] = self._read_template("project.html")
+        templates["resume"] = self._read_template("resume2.html")
+        templates["job"] = self._read_template("job2.html")
+        templates["responsibility"] = self._read_template("job_responsibility2.html")
+        templates["education"] = self._read_template("education2.html")
+        templates["project"] = self._read_template("project2.html")
 
         html = {}
 
