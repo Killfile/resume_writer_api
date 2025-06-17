@@ -12,3 +12,4 @@ dependencies:
 - openai
 - pprintpp
 - flask_cors
+- pytest

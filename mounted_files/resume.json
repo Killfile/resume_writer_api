@@ -27,7 +27,7 @@
         "position": "Sr Engineering Manager",
         "dates": "04/2021 - 04/2024",
         "responsibilities": {
-          "5": "Launched V2 of Tracer’s SaaS analytics product, reducing compute costs by 20%.",
+          "5": "Launched V2 of Tracer's SaaS analytics product, reducing compute costs by 20%.",
           "6": "Planned and directed the replacement of a legacy front-end application with an all-Typescript/React UI leveraging agile methodologies to deliver with zero downtime or feature loss.",
           "7": "Developed a technical strategy around tech-debt and performance optimization; led a team of 15 in is execution, resulting in performance gains of ~15%.",
           "8": "Coached other managers driving company-wide implementation of engineering best practices reducing defect rate to less than 2%.",
@@ -40,7 +40,7 @@
         "position": "Engineering Manager",
         "dates": "09/2019 - 03/2021",
         "responsibilities": {
-          "10": "Managed two teams security and compliance engineering teams in the US and South America totaling 16 engineers delivering KYC/AML microservices and user-facing solutions.",
+          "10": "Managed two security and compliance engineering teams in the US and South America totaling 16 engineers delivering KYC/AML microservices and user-facing solutions.",
           "11": "Transformed an under-performing C# and C++ team into one that hit sprint commitments 100% of the time while maintaining velocity through agile coaching and technical leadership.",
           "12": "Defined and implemented recruting, evaluation/leveling, and retention processes for newly-remote teams; hired 40+ developers into the engineering organization.",
           "13": "Restructured organization-wide approach to versioning and implemented a CI/CD process, tripling release frequency and cutting time-to-merge by 20%.",

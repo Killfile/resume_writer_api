@@ -74,7 +74,7 @@ class ResumeWriter:
             revised_experience = experience
 
         job_responsibilities_html = ""
-        for responsibility in revised_experience["responsibilities"]:
+        for responsibility in revised_experience["responsibilities"].values():
             job_responsibility_html = str(job_responsibility_html_template)
             job_responsibility_html = job_responsibility_html.replace("<<ResponsibilityPlaceholder>>", responsibility)
             job_responsibilities_html += job_responsibility_html

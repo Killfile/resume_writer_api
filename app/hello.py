@@ -13,12 +13,14 @@ from flask_cors import CORS
 from app.app_paths import AppPaths
 from app.resume_writer import ResumeWriter
 
+from responsibility_archive import ResponsibilityArchive
 from weasyprint import HTML
 
 app = Flask(__name__)
 CORS(app)
 
 FILE_DIRECTORY_NAME = "files"
+MOUNTED_FILES_DIRECTORY = "../mounted_files/"
 
 
 description =   '''
@@ -120,7 +122,7 @@ def _get_skills_overlap(array_data)->Tuple[any, list]:
     lcase_array = [element.lower() for element in array_data if isinstance(element, str)]
     paths = AppPaths(current_app.root_path)
     
-    with open(paths.get_local_path("full_skills.json"), 'r') as f:
+    with open(paths.get_local_path("../mounted_files/full_skills.json"), 'r') as f:
         json_str = f.read()
     matched_skills = json.loads(json_str.lower())
 
@@ -146,7 +148,7 @@ def _find_safe_resume_number(paths: AppPaths, filename:str):
     
     parts = filename.split(".")
 
-    source = paths.get_local_path(filename)
+    source = paths.get_local_path(MOUNTED_FILES_DIRECTORY,filename)
     dest = paths.get_local_path("files",f"{parts[0]}_{resume_number}.{parts[1]}")
     shutil.copyfile(source,dest)
     return resume_number, source, dest
@@ -190,15 +192,20 @@ def render_build_resume(resume_id):
     
     return render_template("build_resume.html", resume_id=resume_id, resume=resume_json)
 
-def _rephrase_responsibilities_with_skills(responsibilities_array, skills_array, custom_instructions=None):
+def _rephrase_responsibilities_with_skills(responsibilities_array:dict, skills_array:List, examples:dict, custom_instructions=None):
+
     context_data = {
         "keywords": skills_array,
-        "resume line items": responsibilities_array
+        "responsibilities": responsibilities_array,
+        "examples": examples
     }
     instructions = """
-        I am going to provide you with some resume line items. Rephrase them to include the supplied keywords. 
-        Do not add any keyword more than once. Do not add any keyword to more than one line item. 
-        Do not replace keywords that are already in a line item with other keywords.
+        I am going to provide you with a dictionary of resume line items named "responsibilities."
+        Rephrase them to include the keywords provided in the "keywords" array.
+        Do not use the same keyword more than once in your reply. 
+        Do not replace or remove keywords that are already included in a the "responsibilites" values.
+        MOST IMPORTANT: Do not change the keys in the "responsibilities" dictionary.
+        Some examples of successful rephrasing are provided in the "examples" dictionary.
     """
 
     if custom_instructions is not None:
@@ -211,10 +218,17 @@ def _rephrase_responsibilities_with_skills(responsibilities_array, skills_array,
 
         {json.dumps(context_data)}
     """
+    
+    class JobResponsibilitity(BaseModel):
+        key: str
+        value: str
+
+
     class JobResponsibilities(BaseModel):
-        responsibilities: list[str]
+        responsibilities: list[JobResponsibilitity]
+
     reply_json = _get_json_from_openai_completion(message, JobResponsibilities)
-    return reply_json["responsibilities"]
+    return reply_json
 
 def _generate_summary_from_skills_and_description(skills_array, job_description, experience, custom_instructions=None):
 
@@ -309,12 +323,17 @@ def do_rephrase_summary(id):
     return jsonify(description)
 
 @app.route('/rephrase_responsibilities', methods=['POST'])
-def de_rephrase_responsibilities_with_skills():
+def do_rephrase_responsibilities_with_skills():
     request_json = request.get_json()
     skills = request_json["skills"]
+    company = request_json["company"]
     responsibilities = request_json["responsibilities"]
     
-    rephrased = _rephrase_responsibilities_with_skills(responsibilities, skills)
+    archive = ResponsibilityArchive(AppPaths(current_app.root_path))
+    archive.load()
+    examples = archive.get_responsibility_variants_by_company(company)
+
+    rephrased = _rephrase_responsibilities_with_skills(responsibilities, skills, examples)
     return jsonify(rephrased)
 
 def _get_resume_json_by_id(id):
@@ -337,7 +356,7 @@ def _get_resume_str_by_id(id):
 def do_map_skills():
     paths = AppPaths(current_app.root_path)
     skills = get_array_from_arguments(request,"skills")
-    with(open(paths.get_local_path('full_skills.json'), 'r') as f):
+    with(open(paths.get_local_path('../mounted_files/full_skills.json'), 'r') as f):
         json_str = f.read()
     skills_json = json.loads(json_str)
     companies = [item["company"] for item in skills_json["highlighted experience"]]
@@ -347,7 +366,7 @@ def do_map_skills():
         company_element["keywords"].extend(company_skill_array_from_form)
         print(f"Company {company} was assigned these skills: {company_skill_array_from_form}",flush=True)
     
-    with(open(paths.get_local_path('full_skills.json'), 'w') as f):
+    with(open(paths.get_local_path('../mounted_files/full_skills.json'), 'w') as f):
         f.writelines(json.dumps(skills_json))
 
     return redirect(url_for('compute_intersection', skills=skills))
@@ -358,7 +377,7 @@ def render_select_skills():
     skills = get_array_from_arguments(request,"skills")
 
     overlap, unmatched_skills = _get_skills_overlap(skills)
-    with(open(paths.get_local_path('full_skills.json'), 'r') as f):
+    with(open(paths.get_local_path('../mounted_files/full_skills.json'), 'r') as f):
         json_str = f.read()
     skills_json = json.loads(json_str)
     companies = [item["company"] for item in skills_json["highlighted experience"]]
@@ -386,6 +405,12 @@ def _get_json_from_openai_completion(ai_query, response_format, ai_model="gpt-4o
     print(completion.choices[0].message,flush=True)
     return json.loads(completion.choices[0].message.content)
 
+def _do_write_responsibliities_to_archive(paths, resume_json):
+    archive = ResponsibilityArchive(paths)
+    archive.load()
+    archive.archive_responsibilities_from_resume(resume_json)
+    archive.write()
+
 
 
 @app.route('/resume/render_as_pdf/<id>', methods=['GET'])
@@ -395,6 +420,9 @@ def render_json_resume_as_pdf(id):
     resume_json = _get_resume_json_by_id(id)
     company = resume_json["company_name"]
     title = resume_json["title_name"]
+
+    _do_write_responsibliities_to_archive(paths, resume_json)
+
     writer = ResumeWriter(paths,None)
     resume_html =  writer.write_resume(resume_json)
     output_filename = f"Chris Thomas-{title}-{company}.pdf"
